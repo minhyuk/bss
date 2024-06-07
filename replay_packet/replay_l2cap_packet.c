@@ -40,6 +40,16 @@ char replay_buggy_packet[]="\xB1\x01\xDB\x69\x94\x5C\x07\x4E\x0D\x9B\x2E\xF1";
 
 int main(int argc, char **argv)
 {
+    """
+    Replay a specific L2CAP packet to a Bluetooth device.
+    
+    Parameters:
+        argc (int): Number of arguments.
+        argv (list): List of arguments.
+    
+    Returns:
+        int: Exit status.
+    """
 	struct sockaddr_l2 addr;
 	int sock, sent, i;
 
@@ -85,3 +95,4 @@ int main(int argc, char **argv)
 	close(sock);
 	return EXIT_SUCCESS;
 }
+

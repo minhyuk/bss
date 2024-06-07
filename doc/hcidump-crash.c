@@ -22,6 +22,16 @@
 
 int main(int argc, char **argv)
 {
+    """
+    Send a malformed L2CAP packet to crash hcidump (Bluez tool).
+    
+    Parameters:
+        argc (int): Number of arguments.
+        argv (list): List of arguments.
+    
+    Returns:
+        int: Exit status.
+    """
 	char *buffer;
 	l2cap_cmd_hdr *cmd;	
 	struct sockaddr_l2 addr;
@@ -83,3 +93,4 @@ int main(int argc, char **argv)
 	close(sock);
 	return EXIT_SUCCESS;
 }
+

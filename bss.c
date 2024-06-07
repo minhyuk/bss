@@ -46,7 +46,7 @@
 #define MAXSIZE		4096
 #define IT		512
 #define LENGTH		20
-#define	BUFCODE		100
+#define BUFCODE		100
 
 int usage(char *);
 void l2dos(char *, int, int, char);
@@ -55,6 +55,15 @@ char *code2define(int code);
 
 void l2dos(char *bdstr_addr, int cmdnum, int siz, char pad)
 {
+    """
+    Perform L2CAP denial-of-service attack.
+    
+    Parameters:
+        bdstr_addr (str): Bluetooth device address.
+        cmdnum (int): L2CAP command number.
+        siz (int): Size of the buffer.
+        pad (char): Padding character.
+    """
 	char *buf;
 	l2cap_cmd_hdr *cmd;		/* struct detailed in /usr/include/bluetooth/l2cap.h */
 	struct sockaddr_l2 addr;
@@ -132,6 +141,14 @@ void l2dos(char *bdstr_addr, int cmdnum, int siz, char pad)
 
 void l2fuzz(char *bdstr_addr, int maxsize, int maxcrash)
 {
+    """
+    Perform L2CAP fuzzing on the Bluetooth device.
+    
+    Parameters:
+        bdstr_addr (str): Bluetooth device address.
+        maxsize (int): Maximum size of the packet.
+        maxcrash (int): Maximum crash count.
+    """
 	char *buf, *savedbuf;
 	struct sockaddr_l2 addr;
 	int sock, i, size;
@@ -217,6 +234,12 @@ void l2fuzz(char *bdstr_addr, int maxsize, int maxcrash)
 
 int usage(char *name)
 {
+    """
+    Display usage information for the BSS tool.
+    
+    Parameters:
+        name (str): Executable name.
+    """
 	fprintf(stderr, "BSS: Bluetooth Stack Smasher\n");
 	fprintf(stderr, "Usage: %s [-s size] [-m mode] [-p pad_byte] [-M maxcrash_count] <bdaddr>\n", name);
 	fprintf(stderr, "Modes are :\n	\
@@ -239,6 +262,15 @@ int usage(char *name)
 
 char *code2define(int code)
 {
+    """
+    Convert L2CAP command code to a human-readable format.
+    
+    Parameters:
+        code (int): L2CAP command code.
+    
+    Returns:
+        str: Human-readable description of the L2CAP command.
+    """
 	char *strcode= malloc(BUFCODE + 1);
 	switch(code)
 	{
@@ -351,3 +383,4 @@ int main(int argc, char **argv)
 	
 	return EXIT_SUCCESS;
 }
+

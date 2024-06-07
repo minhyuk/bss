@@ -34,6 +34,16 @@
 
 int main(int argc, char **argv)
 {
+    """
+    Send an L2CAP packet to reset the display of Sony/Ericsson phones.
+    
+    Parameters:
+        argc (int): Number of arguments.
+        argv (list): List of arguments.
+    
+    Returns:
+        int: Exit status.
+    """
 	char *buffer;
 	l2cap_cmd_hdr *cmd;	
 	struct sockaddr_l2 addr;
@@ -95,3 +105,4 @@ int main(int argc, char **argv)
 	close(sock);
 	return EXIT_SUCCESS;
 }
+
