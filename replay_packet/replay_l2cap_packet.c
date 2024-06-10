@@ -15,6 +15,11 @@ void set_replay_buggy_packet(const char *hex_data) {
 
 int main(int argc, char **argv) {
     ...
+
+    if (argc < 2) {
+        fprintf(stderr, "Usage: %s bluetooth_address\n", argv[0]);
+        exit(EXIT_FAILURE);
+    }
 	
     if ((sock = socket(PF_BLUETOOTH, SOCK_RAW, BTPROTO_L2CAP)) < 0) {
         perror("socket");

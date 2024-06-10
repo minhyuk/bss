@@ -23,6 +23,7 @@ char *code2define(int code)
         default:
             free(strcode);
             strcode = NULL;
+            break; // Add break statement here to exit the switch block
     }
     return strcode;
 }
