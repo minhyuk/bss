@@ -34,8 +34,6 @@
 
 int main(int argc, char **argv)
 {
-	char *buffer;
-	l2cap_cmd_hdr *cmd;	
 	struct sockaddr_l2 addr;
 	int sock, sent, i;
 
@@ -68,30 +66,27 @@ int main(int argc, char **argv)
 		exit(EXIT_FAILURE);
 	}
 	
-	if(!(buffer = (char *) malloc ((int) SIZE + 1))) 
-	{
+	l2cap_cmd_hdr *cmd = (l2cap_cmd_hdr *)malloc(sizeof(l2cap_cmd_hdr)); // Dynamically allocate memory for the struct
+	if (!cmd) {
 		perror("malloc");
 		exit(EXIT_FAILURE);
 	}
 	
-	memset(buffer, 'A', SIZE);
-
-	cmd = (l2cap_cmd_hdr *) buffer;
 	cmd->code = L2CAP_ECHO_REQ;
 	cmd->ident = 1;
 	cmd->len = FAKE_SIZE;
 	
-	if( (sent=send(sock, buffer, SIZE, 0)) >= 0)
+	if( (sent=send(sock, (char*)cmd, sizeof(l2cap_cmd_hdr), 0)) >= 0)
 	{
 		printf("L2CAP packet sent (%d)\n", sent);
 	}
 
 	printf("Buffer:\t");
 	for(i=0; i<sent; i++)
-		printf("%.2X ", (unsigned char) buffer[i]);
+		printf("%.2X ", ((unsigned char*)cmd)[i]);
 	printf("\n");
 
-	free(buffer);
+	free(cmd);
 	close(sock);
 	return EXIT_SUCCESS;
 }

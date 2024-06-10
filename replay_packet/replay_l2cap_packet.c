@@ -42,6 +42,7 @@ int main(int argc, char **argv)
 {
 	struct sockaddr_l2 addr;
 	int sock, sent, i;
+	int size = sizeof(replay_buggy_packet); // Dynamically determine the size
 
 	if(argc < 2)
 	{
@@ -72,7 +73,7 @@ int main(int argc, char **argv)
 		exit(EXIT_FAILURE);
 	}
 	
-	if( (sent=send(sock, replay_buggy_packet, SIZE, 0)) >= 0)
+	if( (sent=send(sock, replay_buggy_packet, size, 0)) >= 0) // Use dynamic size instead of SIZE
 	{
 		printf("L2CAP packet sent (%d)\n", sent);
 	}
