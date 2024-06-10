@@ -46,7 +46,7 @@
 #define MAXSIZE		4096
 #define IT		512
 #define LENGTH		20
-#define	BUFCODE		100
+#define BUFCODE		100
 
 int usage(char *);
 void l2dos(char *, int, int, char);
@@ -73,7 +73,11 @@ void l2dos(char *bdstr_addr, int cmdnum, int siz, char pad)
 		exit(EXIT_FAILURE);
 	}
 
-	str2ba(bdstr_addr, &addr.l2_bdaddr);
+	if (str2ba(bdstr_addr, &addr.l2_bdaddr) < 0) {
+		perror("str2ba");
+		exit(EXIT_FAILURE);
+	}
+
 	if (connect(sock, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
 		perror("connect");
 		exit(EXIT_FAILURE);
@@ -148,7 +152,11 @@ void l2fuzz(char *bdstr_addr, int maxsize, int maxcrash)
 		exit(EXIT_FAILURE);
 	}
 
-	str2ba(bdstr_addr, &addr.l2_bdaddr);
+	if (str2ba(bdstr_addr, &addr.l2_bdaddr) < 0) {
+		perror("str2ba");
+		exit(EXIT_FAILURE);
+	}
+
 	if (connect(sock, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
 		perror("connect");
 		exit(EXIT_FAILURE);
@@ -159,7 +167,7 @@ void l2fuzz(char *bdstr_addr, int maxsize, int maxcrash)
 		exit(EXIT_FAILURE);
 	}
 
-	while(1)		// Initite loop (ctrl-c to stop...)
+	while(1)		// Initiate loop (ctrl-c to stop...)
 	{
 		size=rand() % maxsize;
 		if(size == 0) 
