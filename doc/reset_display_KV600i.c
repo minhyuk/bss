@@ -29,7 +29,6 @@
 #include <bluetooth/hci.h>
 #include <bluetooth/l2cap.h>
 
-#define SIZE		15
 #define FAKE_SIZE	12
 
 int main(int argc, char **argv)
@@ -71,17 +70,27 @@ int main(int argc, char **argv)
 	cmd.code = L2CAP_ECHO_REQ;
 	cmd.ident = 1;
 	cmd.len = FAKE_SIZE;
+
+	// Dynamically allocate memory for the L2CAP packet based on the actual size
+	size_t packetSize = sizeof(l2cap_cmd_hdr);
+	void *packet = malloc(packetSize);
+	if (packet == NULL) {
+		perror("malloc");
+		exit(EXIT_FAILURE);
+	}
+	memcpy(packet, &cmd, sizeof(l2cap_cmd_hdr));
 	
-	if( (sent=send(sock, (char*)&cmd, sizeof(l2cap_cmd_hdr), 0)) >= 0)
+	if( (sent = send(sock, packet, packetSize, 0)) >= 0)
 	{
 		printf("L2CAP packet sent (%d)\n", sent);
 	}
 
 	printf("Buffer:\t");
-	for(i=0; i<sent; i++)
-		printf("%.2X ", ((unsigned char*)&cmd)[i]);
+	for(i = 0; i < sent; i++)
+		printf("%.2X ", ((unsigned char*)packet)[i]);
 	printf("\n");
 
+	free(packet);
 	close(sock);
 	return EXIT_SUCCESS;
 }

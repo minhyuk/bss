@@ -67,13 +67,17 @@ int main(int argc, char **argv)
 	}
 	memcpy(buffer, &cmd, sizeof(l2cap_cmd_hdr)); // Copy the structure to the buffer
 	
-	if( (sent=send(sock, buffer, buffer_size, 0)) >= 0)
-	{
-		printf("L2CAP packet sent (%d)\n", sent);
+	if ((sent = send(sock, buffer, buffer_size, 0)) < 0) {
+		perror("send");
+		free(buffer);
+		close(sock);
+		exit(EXIT_FAILURE);
 	}
 
+	printf("L2CAP packet sent (%d)\n", sent);
+
 	printf("Buffer:\t");
-	for(i=0; i<sent; i++)
+	for (i = 0; i < sent; i++)
 		printf("%.2X ", (unsigned char)buffer[i]);
 	printf("\n");
 

@@ -35,7 +35,6 @@
 #include <bluetooth/hci.h>
 #include <bluetooth/l2cap.h>
 
-#define SIZE		12
 char replay_buggy_packet[]="\xB1\x01\xDB\x69\x94\x5C\x07\x4E\x0D\x9B\x2E\xF1";
 
 int main(int argc, char **argv)
