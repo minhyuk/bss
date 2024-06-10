@@ -310,7 +310,7 @@ int main(int argc, char **argv)
 	
 	for(i = 0; i < argc; i++){
 		if(strchr(argv[i], ':'))
-			strncpy(bdaddr, argv[i], 18);
+			strlcpy(bdaddr, argv[i], sizeof(bdaddr)); // Using strlcpy to copy the Bluetooth address
 		else
 		{
 		if(!memcmp(argv[i], "-s", 2) && (siz = atoi(argv[++i])) < 0)
@@ -351,3 +351,4 @@ int main(int argc, char **argv)
 	
 	return EXIT_SUCCESS;
 }
+

