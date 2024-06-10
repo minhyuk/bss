@@ -48,7 +48,7 @@ int main(int argc, char **argv)
 		fprintf(stderr, "%s <btaddr>\n", argv[0]);
 		exit(EXIT_FAILURE);
 	}
-	
+
 	if ((sock = socket(PF_BLUETOOTH, SOCK_RAW, BTPROTO_L2CAP)) < 0) 
 	{
 		perror("socket");
@@ -65,13 +65,13 @@ int main(int argc, char **argv)
 	}
 
 	str2ba(argv[1], &addr.l2_bdaddr);
-	
+
 	if (connect(sock, (struct sockaddr *) &addr, sizeof(addr)) < 0) 
 	{
 		perror("connect");
 		exit(EXIT_FAILURE);
 	}
-	
+
 	if( (sent=send(sock, replay_buggy_packet, SIZE, 0)) >= 0)
 	{
 		printf("L2CAP packet sent (%d)\n", sent);
