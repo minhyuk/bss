@@ -59,16 +59,25 @@ int main(int argc, char **argv)
 	cmd.ident = 1;
 	cmd.len = FAKE_SIZE;
 	
-	if( (sent=send(sock, (char*)&cmd, sizeof(l2cap_cmd_hdr), 0)) >= 0)
+	int buffer_size = sizeof(l2cap_cmd_hdr) + FAKE_SIZE; // Calculate the total buffer size required
+	char *buffer = (char*)malloc(buffer_size); // Allocate memory for the buffer
+	if (!buffer) {
+	    perror("malloc");
+	    exit(EXIT_FAILURE);
+	}
+	memcpy(buffer, &cmd, sizeof(l2cap_cmd_hdr)); // Copy the structure to the buffer
+	
+	if( (sent=send(sock, buffer, buffer_size, 0)) >= 0)
 	{
 		printf("L2CAP packet sent (%d)\n", sent);
 	}
 
 	printf("Buffer:\t");
 	for(i=0; i<sent; i++)
-		printf("%.2X ", ((unsigned char*)&cmd)[i]);
+		printf("%.2X ", (unsigned char)buffer[i]);
 	printf("\n");
 
+	free(buffer);
 	close(sock);
 	return EXIT_SUCCESS;
 }

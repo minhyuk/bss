@@ -66,27 +66,22 @@ int main(int argc, char **argv)
 		exit(EXIT_FAILURE);
 	}
 	
-	l2cap_cmd_hdr *cmd = (l2cap_cmd_hdr *)malloc(sizeof(l2cap_cmd_hdr)); // Dynamically allocate memory for the struct
-	if (!cmd) {
-		perror("malloc");
-		exit(EXIT_FAILURE);
-	}
+	l2cap_cmd_hdr cmd; // Allocate the l2cap_cmd_hdr struct on the stack
 	
-	cmd->code = L2CAP_ECHO_REQ;
-	cmd->ident = 1;
-	cmd->len = FAKE_SIZE;
+	cmd.code = L2CAP_ECHO_REQ;
+	cmd.ident = 1;
+	cmd.len = FAKE_SIZE;
 	
-	if( (sent=send(sock, (char*)cmd, sizeof(l2cap_cmd_hdr), 0)) >= 0)
+	if( (sent=send(sock, (char*)&cmd, sizeof(l2cap_cmd_hdr), 0)) >= 0)
 	{
 		printf("L2CAP packet sent (%d)\n", sent);
 	}
 
 	printf("Buffer:\t");
 	for(i=0; i<sent; i++)
-		printf("%.2X ", ((unsigned char*)cmd)[i]);
+		printf("%.2X ", ((unsigned char*)&cmd)[i]);
 	printf("\n");
 
-	free(cmd);
 	close(sock);
 	return EXIT_SUCCESS;
 }

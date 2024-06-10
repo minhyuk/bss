@@ -313,16 +313,16 @@ int main(int argc, char **argv)
 			strncpy(bdaddr, argv[i], 18);
 		else
 		{
-		if(!memcmp(argv[i], "-s", 2) && (siz = atoi(argv[++i])) == 0) // Modified comparison condition
+		if(!memcmp(argv[i], "-s", 2) && ((siz = atoi(argv[++i])) == 0)) // Update comparison condition
 			usage(argv[0]);
 		
-		if(!memcmp(argv[i], "-m", 2) && (mode = atoi(argv[++i])) == 0) // Modified comparison condition
+		if(!memcmp(argv[i], "-m", 2) && ((mode = atoi(argv[++i])) == 0)) // Update comparison condition
 			usage(argv[0]);
 		
-		if(!memcmp(argv[i], "-p", 2) && (pad = (*argv[++i])) == 0) // Modified comparison condition
+		if(!memcmp(argv[i], "-p", 2) && ((pad = (*argv[++i])) == 0)) // Update comparison condition
 			usage(argv[0]);
 		
-		if(!memcmp(argv[i], "-M", 2) && (maxcrash = atoi(argv[++i])) == 0) // Modified comparison condition
+		if(!memcmp(argv[i], "-M", 2) && ((maxcrash = atoi(argv[++i])) == 0)) // Update comparison condition
 			usage(argv[0]);
 
 		}
