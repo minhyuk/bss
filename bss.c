@@ -53,6 +53,18 @@ void l2dos(char *, int, int, char);
 void l2fuzz(char *bdstr_addr, int maxsize, int maxcrash);
 char *code2define(int code);
 
+/**
+ * l2dos - Executes a L2CAP (Logical Link Control and Adaptation Protocol) denial-of-service (DoS) attack
+ * 
+ * This function establishes a Bluetooth connection to the target device using the provided Bluetooth 
+ * device address (bdstr_addr), constructs an L2CAP command packet based on the given command number (cmdnum)
+ * and size (siz), and repeatedly sends this packet to the target, potentially causing a DoS on the target device.
+ * 
+ * @param bdstr_addr: A string containing the Bluetooth device address of the target.
+ * @param cmdnum: The command number to use for the L2CAP command packet.
+ * @param siz: The size of the L2CAP command packet.
+ * @param pad: The padding byte to use for the L2CAP command packet.
+ */
 void l2dos(char *bdstr_addr, int cmdnum, int siz, char pad)
 {
 	char *buf;
@@ -130,6 +142,18 @@ void l2dos(char *bdstr_addr, int cmdnum, int siz, char pad)
 	free(strcode);	
 }
 
+/**
+ * l2fuzz - Executes a L2CAP fuzzing test on a Bluetooth device
+ *
+ * This function connects to the specified Bluetooth device using the provided address (bdstr_addr) and
+ * continuously sends randomly generated L2CAP packets. The function monitors if the packets cause the
+ * Bluetooth stack to crash and will output information about any crashes that occur. The test will run 
+ * indefinitely until manually stopped or until the specified maximum number of crashes (maxcrash) is reached.
+ *
+ * @param bdstr_addr: A string containing the Bluetooth device address of the target.
+ * @param maxsize: The maximum size of the L2CAP packet to send.
+ * @param maxcrash: The maximum number of crashes to detect before terminating the function.
+ */
 void l2fuzz(char *bdstr_addr, int maxsize, int maxcrash)
 {
 	char *buf, *savedbuf;
@@ -215,6 +239,17 @@ void l2fuzz(char *bdstr_addr, int maxsize, int maxcrash)
 	}
 }
 
+/**
+ * usage - Prints the usage information and available modes for the Bluetooth Stack Smasher tool
+ *
+ * This function outputs usage information and available modes for the Bluetooth Stack Smasher (BSS) tool,
+ * which is a tool designed for fuzzing Bluetooth stacks. It details the command-line parameters and 
+ * options available for running the tool. After displaying the information, the function exits the program.
+ *
+ * @param name: The name of the executable (typically provided as argv[0] from the main function).
+ * 
+ * @return This function does not return; it calls exit to terminate the program.
+ */
 int usage(char *name)
 {
 	fprintf(stderr, "BSS: Bluetooth Stack Smasher\n");
@@ -237,6 +272,19 @@ int usage(char *name)
 }
 
 
+/**
+ * code2define - Converts an L2CAP command code to a human-readable string description
+ *
+ * This function takes an L2CAP command code as input and returns a string describing the command.
+ * If the command code is recognized, a corresponding descriptive string is returned.
+ * If the command code is not recognized, the function returns NULL.
+ *
+ * @param code: The L2CAP command code to be converted to a descriptive string.
+ * 
+ * @return A pointer to a descriptive string corresponding to the given command code,
+ *         or NULL if the command code is not recognized. 
+ *         The returned string is dynamically allocated and should be freed by the caller.
+ */
 char *code2define(int code)
 {
 	char *strcode= malloc(BUFCODE + 1);
@@ -292,6 +340,19 @@ char *code2define(int code)
 	return strcode;
 }
 
+/**
+ * main - Entry point for the Bluetooth Stack Smasher tool
+ *
+ * This function is the main entry point for the Bluetooth Stack Smasher (BSS) tool. 
+ * It processes command-line arguments, sets up appropriate parameters, and then 
+ * either performs specific L2CAP DoS attacks or fuzzing tests based on the user-provided 
+ * mode and other options.
+ *
+ * @param argc: The number of command-line arguments.
+ * @param argv: An array of command-line argument strings.
+ * 
+ * @return Returns EXIT_SUCCESS on successful completion.
+ */
 int main(int argc, char **argv)
 {
 	int i, siz = 0, mode = 0, maxcrash=1;

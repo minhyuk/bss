@@ -20,6 +20,19 @@
 #define SIZE		15
 #define FAKE_SIZE	12
 
+/**
+ * main - Entry point for sending a crafted L2CAP echo request packet to a Bluetooth device
+ *
+ * This function sets up a Bluetooth L2CAP connection to the specified Bluetooth address,
+ * allocates and fills a buffer with a crafted L2CAP echo request packet, and sends it to the device.
+ * It prints the number of bytes sent and a hexadecimal representation of the sent buffer.
+ *
+ * @param argc: The number of command-line arguments.
+ * @param argv: An array of command-line argument strings.
+ *              argv[1] should contain the Bluetooth address of the target device.
+ * 
+ * @return Returns EXIT_SUCCESS on successful completion.
+ */
 int main(int argc, char **argv)
 {
 	char *buffer;
