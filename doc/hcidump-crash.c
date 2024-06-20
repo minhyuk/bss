@@ -22,10 +22,10 @@
 
 int main(int argc, char **argv)
 {
-	char *buffer;
+	char *bluetoothPacket;
 	l2cap_cmd_hdr *cmd;	
 	struct sockaddr_l2 addr;
-	int sock, sent, i;
+	int sock, bytesSent, i;
 
 	if(argc < 2)
 	{
@@ -56,30 +56,30 @@ int main(int argc, char **argv)
 		exit(EXIT_FAILURE);
 	}
 	
-	if(!(buffer = (char *) malloc ((int) SIZE + 1))) 
+	if(!(bluetoothPacket = (char *) malloc ((int) SIZE + 1))) 
 	{
 		perror("malloc");
 		exit(EXIT_FAILURE);
 	}
 	
-	memset(buffer, 'A', SIZE);
+	memset(bluetoothPacket, 'A', SIZE);
 
-	cmd = (l2cap_cmd_hdr *) buffer;
+	cmd = (l2cap_cmd_hdr *) bluetoothPacket;
 	cmd->code = L2CAP_ECHO_REQ;
 	cmd->ident = 1;
 	cmd->len = FAKE_SIZE;
 	
-	if( (sent=send(sock, buffer, SIZE, 0)) >= 0)
+	if( (bytesSent=send(sock, bluetoothPacket, SIZE, 0)) >= 0)
 	{
-		printf("L2CAP packet sent (%d)\n", sent);
+		printf("L2CAP packet sent (%d)\n", bytesSent);
 	}
 
 	printf("Buffer:\t");
-	for(i=0; i<sent; i++)
-		printf("%.2X ", (unsigned char) buffer[i]);
+	for(i=0; i<bytesSent; i++)
+		printf("%.2X ", (unsigned char) bluetoothPacket[i]);
 	printf("\n");
 
-	free(buffer);
+	free(bluetoothPacket);
 	close(sock);
 	return EXIT_SUCCESS;
 }
