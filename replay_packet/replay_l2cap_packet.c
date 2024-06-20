@@ -38,6 +38,23 @@
 #define SIZE		12
 char replay_buggy_packet[]="\xB1\x01\xDB\x69\x94\x5C\x07\x4E\x0D\x9B\x2E\xF1";
 
+/**
+ * main - 블루투스 장치와 L2CAP 프로토콜을 통해 연결을 설정하고 패킷을 전송하는 프로그램
+ * @argc: 프로그램 인자의 수
+ * @argv: 인자 문자열 배열
+ *
+ * 프로그램의 기능:
+ * 1. 명령줄 인자로 블루투스 주소(btaddr)를 받아 소켓을 생성하고 연결합니다.
+ * 2. L2CAP 소켓을 생성하고 서버에 연결을 설정합니다.
+ * 3. L2CAP 패킷을 전송하고 전송된 바이트 수를 출력합니다.
+ * 4. 전송된 버퍼의 내용을 16진수로 출력합니다.
+ * 
+ * 사용 방법:
+ * ./program_name <btaddr>
+ * 
+ * 예제:
+ * ./program_name 01:23:45:67:89:AB
+ */
 int main(int argc, char **argv)
 {
 	struct sockaddr_l2 addr;

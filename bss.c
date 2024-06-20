@@ -53,6 +53,19 @@ void l2dos(char *, int, int, char);
 void l2fuzz(char *bdstr_addr, int maxsize, int maxcrash);
 char *code2define(int code);
 
+/**
+ * l2dos - 특정 Bluetooth 장치를 대상으로 L2CAP command packets를 fuzzing하는 함수
+ * 
+ * @param bdstr_addr: 공격할 Bluetooth 장치의 주소 (문자열 형태)
+ * @param cmdnum: 수행할 L2CAP 명령 코드 (정수)
+ * @param siz: 보낼 패킷의 크기 (정수)
+ * @param pad: 패킷 데이터를 채울 패딩 문자 (문자)
+ * 
+ * 이 함수는 Bluetooth 소켓을 열고, 주어진 장치 주소와 연결한 후, 
+ * 특정 L2CAP 명령 코드를 포함하는 패킷을 생성하여 fuzzing을 수행합니다.
+ * 패킷은 주어진 크기와 패딩 문자로 채워지고, 여러 번 전송됩니다.
+ * 패킷 전송 도중 에러가 발생하면 해당 장치가 취약할 수 있음을 보고합니다.
+ */
 void l2dos(char *bdstr_addr, int cmdnum, int siz, char pad)
 {
 	char *buf;
@@ -130,6 +143,24 @@ void l2dos(char *bdstr_addr, int cmdnum, int siz, char pad)
 	free(strcode);	
 }
 
+/**
+ * l2fuzz - Bluetooth L2CAP 프로토콜을 사용하여 취약점을 테스트하는 함수
+ * 
+ * 이 함수는 Bluetooth L2CAP 프로토콜을 통해 대상 장치로 임의의 데이터를 전송하여
+ * 장치가 충돌(crash)을 일으키는지 테스트합니다.
+ * 
+ * @param bdstr_addr 대상 블루투스 장치의 주소 문자열
+ * @param maxsize 전송할 패킷의 최대 크기
+ * @param maxcrash 최대 충돌 횟수 (0일 경우 무한정)
+ * 
+ * 함수 설명:
+ * 1. Bluetooth RAW 소켓을 생성하고, 주소 구조체를 초기화합니다.
+ * 2. 소켓을 통해 대상 블루투스 장치에 연결을 시도합니다.
+ * 3. 무한 루프를 통해 임의의 크기의 패킷을 생성하고 전송합니다.
+ * 4. 패킷 전송 후 장치가 충돌할 경우 충돌 횟수를 증가시키고, 해당 패킷 정보와 함께 충돌 메시지를 출력합니다.
+ * 5. 설정된 최대 충돌 횟수에 도달하면 프로그램을 종료합니다.
+ * 6. 각 패킷 전송 후 마지막으로 전송한 패킷을 저장하여 이후 충돌 발생 시 해당 패킷을 참조할 수 있도록 합니다.
+ */
 void l2fuzz(char *bdstr_addr, int maxsize, int maxcrash)
 {
 	char *buf, *savedbuf;
@@ -215,6 +246,15 @@ void l2fuzz(char *bdstr_addr, int maxsize, int maxcrash)
 	}
 }
 
+/**
+ * usage - 프로그램 사용법을 출력하고 프로그램을 종료합니다.
+ *
+ * @name: 프로그램 실행 파일의 이름
+ *
+ * 이 함수는 프로그램의 사용법에 대한 정보를 표준 오류 출력(stderr)에
+ * 출력하고,(EXIT_FAILURE) 값을 반환하여 실행을 종료시킵니다.
+ * 사용법 정보에는 사용할 수 있는 명령줄 인자와 모드에 대한 설명이 포함되어 있습니다.
+ */
 int usage(char *name)
 {
 	fprintf(stderr, "BSS: Bluetooth Stack Smasher\n");
@@ -237,6 +277,19 @@ int usage(char *name)
 }
 
 
+/**
+ * code2define - 주어진 코드에 해당하는 L2CAP 메시지 문자열을 반환하는 함수
+ * 
+ * @param code: L2CAP 메시지 코드 (정수 값)
+ * 
+ * @return code에 해당하는 L2CAP 메시지의 문자열 설명 
+ *         (성공시 동적으로 할당된 문자열, 실패시 NULL)
+ * 
+ * 이 함수는 주어진 code 값에 따라 해당되는 L2CAP 메시지의 
+ * 문자열 설명을 반환합니다. 성공적으로 매핑된 경우 동적으로 할당된 
+ * 문자열을 반환하며, 매핑 실패 시 NULL을 반환합니다. 
+ * 사용자는 반환된 문자열에 대해 메모리 해제를 수행하여야 합니다.
+ */
 char *code2define(int code)
 {
 	char *strcode= malloc(BUFCODE + 1);
@@ -291,6 +344,22 @@ char *code2define(int code)
 	}
 	return strcode;
 }
+
+/**
+ * @brief 프로그램의 진입점. 블루투스 디바이스에 패킷을 보내어 테스트를 수행합니다.
+ *
+ * @param argc 명령줄 인수의 개수
+ * @param argv 명령줄 인수 배열
+ *
+ * @details
+ * 1. 프로그램은 root 권한으로 실행되어야 합니다.
+ * 2. 명령줄 인수가 올바르게 제공되지 않은 경우 사용법을 출력하고 종료합니다.
+ * 3. 블루투스 주소와 옵션을 명령줄 인수에서 분석합니다.
+ * 4. 모드에 따라 l2dos 혹은 l2fuzz 함수를 호출하여 블루투스 장치에 패킷을 보냅니다.
+ * 5. 테스트가 완료되면 종료 메시지를 출력하고 프로그램을 종료합니다.
+ *
+ * @return 프로그램이 정상적으로 종료되면 EXIT_SUCCESS를 반환
+ */
 
 int main(int argc, char **argv)
 {
