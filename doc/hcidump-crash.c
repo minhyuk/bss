@@ -22,10 +22,10 @@
 
 int main(int argc, char **argv)
 {
-	char *buffer;
+	char *data;
 	l2cap_cmd_hdr *cmd;	
-	struct sockaddr_l2 addr;
-	int sock, sent, i;
+	struct sockaddr_l2 destAddress;
+	int sock, numBytesSent, i;
 
 	if(argc < 2)
 	{
@@ -39,47 +39,47 @@ int main(int argc, char **argv)
 		exit(EXIT_FAILURE);
 	}
 
-	memset(&addr, 0, sizeof(addr));
-	addr.l2_family = AF_BLUETOOTH;
+	memset(&destAddress, 0, sizeof(destAddress));
+	destAddress.l2_family = AF_BLUETOOTH;
 
-	if (bind(sock, (struct sockaddr *) &addr, sizeof(addr)) < 0) 
+	if (bind(sock, (struct sockaddr *) &destAddress, sizeof(destAddress)) < 0) 
 	{
 		perror("bind");
 		exit(EXIT_FAILURE);
 	}
 
-	str2ba(argv[1], &addr.l2_bdaddr);
+	str2ba(argv[1], &destAddress.l2_bdaddr);
 	
-	if (connect(sock, (struct sockaddr *) &addr, sizeof(addr)) < 0) 
+	if (connect(sock, (struct sockaddr *) &destAddress, sizeof(destAddress)) < 0) 
 	{
 		perror("connect");
 		exit(EXIT_FAILURE);
 	}
 	
-	if(!(buffer = (char *) malloc ((int) SIZE + 1))) 
+	if(!(data = (char *) malloc ((int) SIZE + 1))) 
 	{
 		perror("malloc");
 		exit(EXIT_FAILURE);
 	}
 	
-	memset(buffer, 'A', SIZE);
+	memset(data, 'A', SIZE);
 
-	cmd = (l2cap_cmd_hdr *) buffer;
+	cmd = (l2cap_cmd_hdr *) data;
 	cmd->code = L2CAP_ECHO_REQ;
 	cmd->ident = 1;
 	cmd->len = FAKE_SIZE;
 	
-	if( (sent=send(sock, buffer, SIZE, 0)) >= 0)
+	if( (numBytesSent=send(sock, data, SIZE, 0)) >= 0)
 	{
-		printf("L2CAP packet sent (%d)\n", sent);
+		printf("L2CAP packet sent (%d)\n", numBytesSent);
 	}
 
-	printf("Buffer:\t");
-	for(i=0; i<sent; i++)
-		printf("%.2X ", (unsigned char) buffer[i]);
+	printf("Data:\t");
+	for(i=0; i<numBytesSent; i++)
+		printf("%.2X ", (unsigned char) data[i]);
 	printf("\n");
 
-	free(buffer);
+	free(data);
 	close(sock);
 	return EXIT_SUCCESS;
 }
