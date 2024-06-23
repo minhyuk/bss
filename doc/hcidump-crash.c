@@ -35,64 +35,64 @@
  */
 int main(int argc, char **argv)
 {
-	char *buffer;
-	l2cap_cmd_hdr *cmd;	
-	struct sockaddr_l2 addr;
-	int sock, sent, i;
+    char *echo_buffer;
+    l2cap_cmd_hdr *echo_cmd_hdr;
+    struct sockaddr_l2 l2cap_sockaddr;
+    int bt_socket, bytes_sent, index;
 
-	if(argc < 2)
-	{
-		fprintf(stderr, "%s <btaddr>\n", argv[0]);
-		exit(EXIT_FAILURE);
-	}
-	
-	if ((sock = socket(PF_BLUETOOTH, SOCK_RAW, BTPROTO_L2CAP)) < 0) 
-	{
-		perror("socket");
-		exit(EXIT_FAILURE);
-	}
+    if(argc < 2)
+    {
+        fprintf(stderr, "%s <btaddr>\n", argv[0]);
+        exit(EXIT_FAILURE);
+    }
 
-	memset(&addr, 0, sizeof(addr));
-	addr.l2_family = AF_BLUETOOTH;
+    if ((bt_socket = socket(PF_BLUETOOTH, SOCK_RAW, BTPROTO_L2CAP)) < 0) 
+    {
+        perror("socket");
+        exit(EXIT_FAILURE);
+    }
 
-	if (bind(sock, (struct sockaddr *) &addr, sizeof(addr)) < 0) 
-	{
-		perror("bind");
-		exit(EXIT_FAILURE);
-	}
+    memset(&l2cap_sockaddr, 0, sizeof(l2cap_sockaddr));
+    l2cap_sockaddr.l2_family = AF_BLUETOOTH;
 
-	str2ba(argv[1], &addr.l2_bdaddr);
-	
-	if (connect(sock, (struct sockaddr *) &addr, sizeof(addr)) < 0) 
-	{
-		perror("connect");
-		exit(EXIT_FAILURE);
-	}
-	
-	if(!(buffer = (char *) malloc ((int) SIZE + 1))) 
-	{
-		perror("malloc");
-		exit(EXIT_FAILURE);
-	}
-	
-	memset(buffer, 'A', SIZE);
+    if (bind(bt_socket, (struct sockaddr *) &l2cap_sockaddr, sizeof(l2cap_sockaddr)) < 0) 
+    {
+        perror("bind");
+        exit(EXIT_FAILURE);
+    }
 
-	cmd = (l2cap_cmd_hdr *) buffer;
-	cmd->code = L2CAP_ECHO_REQ;
-	cmd->ident = 1;
-	cmd->len = FAKE_SIZE;
-	
-	if( (sent=send(sock, buffer, SIZE, 0)) >= 0)
-	{
-		printf("L2CAP packet sent (%d)\n", sent);
-	}
+    str2ba(argv[1], &l2cap_sockaddr.l2_bdaddr);
 
-	printf("Buffer:\t");
-	for(i=0; i<sent; i++)
-		printf("%.2X ", (unsigned char) buffer[i]);
-	printf("\n");
+    if (connect(bt_socket, (struct sockaddr *) &l2cap_sockaddr, sizeof(l2cap_sockaddr)) < 0) 
+    {
+        perror("connect");
+        exit(EXIT_FAILURE);
+    }
 
-	free(buffer);
-	close(sock);
-	return EXIT_SUCCESS;
+    if(!(echo_buffer = (char *) malloc((int) SIZE + 1))) 
+    {
+        perror("malloc");
+        exit(EXIT_FAILURE);
+    }
+
+    memset(echo_buffer, 'A', SIZE);
+
+    echo_cmd_hdr = (l2cap_cmd_hdr *) echo_buffer;
+    echo_cmd_hdr->code = L2CAP_ECHO_REQ;
+    echo_cmd_hdr->ident = 1;
+    echo_cmd_hdr->len = FAKE_SIZE;
+
+    if((bytes_sent = send(bt_socket, echo_buffer, SIZE, 0)) >= 0)
+    {
+        printf("L2CAP packet sent (%d)\n", bytes_sent);
+    }
+
+    printf("Buffer:\t");
+    for(index = 0; index < bytes_sent; index++)
+        printf("%.2X ", (unsigned char) echo_buffer[index]);
+    printf("\n");
+
+    free(echo_buffer);
+    close(bt_socket);
+    return EXIT_SUCCESS;
 }
