@@ -38,6 +38,20 @@
 #define SIZE		12
 char replay_buggy_packet[]="\xB1\x01\xDB\x69\x94\x5C\x07\x4E\x0D\x9B\x2E\xF1";
 
+/* 
+ * main 함수
+ * 이 함수는 블루투스 소켓을 생성하고, 특정 블루투스 주소와의 연결을 시도한 다음 
+ * 버그가 있는 패킷을 전송합니다. 
+ * 인자로 '<btaddr>' 형식의 블루투스 기기 주소가 필요합니다.
+ * 
+ * 매개변수:
+ *  - argc: 인자 개수
+ *  - argv: 인자 벡터
+ * 
+ * 반환:
+ *  - 성공 시 EXIT_SUCCESS를 반환
+ *  - 실패 시 EXIT_FAILURE를 반환하고 프로그램 종료
+ */
 int main(int argc, char **argv)
 {
 	struct sockaddr_l2 addr;

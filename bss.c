@@ -53,6 +53,21 @@ void l2dos(char *, int, int, char);
 void l2fuzz(char *bdstr_addr, int maxsize, int maxcrash);
 char *code2define(int code);
 
+/**
+ * l2dos - 블루투스 L2CAP 프로토콜을 통해 DoS 공격을 시도하는 함수
+ *
+ * @bdstr_addr: 대상 블루투스 장치의 주소 (문자열 형식)
+ * @cmdnum: 사용할 L2CAP 명령 코드 번호
+ * @siz: 전송할 패킷의 크기
+ * @pad: 패킷에 채울 패딩 바이트
+ *
+ * 이 함수는 지정된 블루투스 장치에 대해 L2CAP 프로토콜을 사용하여 DoS 공격을 시도합니다.
+ * 먼저 블루투스 소켓을 생성하고, 소켓에 바인드 및 연결을 수행한 후,
+ * 전송할 패킷 버퍼를 할당하고 패딩 바이트로 초기화합니다.
+ * 그 다음, 지정된 명령 코드와 식별자를 사용하여 패킷을 구성하고,
+ * 패킷을 여러 번 전송하여 공격을 수행합니다.
+ * 전송 중에 오류가 발생하면 이를 감지하고 적절한 메시지를 출력합니다.
+ */
 void l2dos(char *bdstr_addr, int cmdnum, int siz, char pad)
 {
 	char *buf;
@@ -130,6 +145,17 @@ void l2dos(char *bdstr_addr, int cmdnum, int siz, char pad)
 	free(strcode);	
 }
 
+/**
+ * l2fuzz - 블루투스 장치에 취약점이 있는지를 확인하기 위해 준 랜덤 데이터를 전송하는 함수
+ * 
+ * @param bdstr_addr: 공격하려는 블루투스 장치의 주소 문자열
+ * @param maxsize: 전송할 최대 패킷 크기
+ * @param maxcrash: 허용할 최대 충돌 횟수. 0이거나 음수면 무제한.
+ * 
+ * 이 함수는 소켓을 생성하고 준 랜덤 데이터를 특정 블루투스 장치로 전송하여 
+ * 해당 장치가 충돌(crash)하는지를 확인한다. 충돌 발생 시마다 관련 정보를 출력하고, 
+ * 지정된 최대 충돌 횟수에 도달하면 프로그램을 종료한다.
+ */
 void l2fuzz(char *bdstr_addr, int maxsize, int maxcrash)
 {
 	char *buf, *savedbuf;
@@ -215,6 +241,17 @@ void l2fuzz(char *bdstr_addr, int maxsize, int maxcrash)
 	}
 }
 
+/**
+ * usage - 명령어 사용법을 출력하고 프로그램을 종료하는 함수
+ * @name: 실행 파일의 이름
+ *
+ * 이 함수는 명령어의 사용법을 표준 오류(stderr) 스트림으로 출력하고,
+ * 프로그램을 EXIT_FAILURE로 종료한다.
+ * 출력되는 사용법은 Bluetooth Stack Smasher(BSS)에 대한 것이다.
+ * 옵션으로 -s size, -m mode, -p pad_byte, -M maxcrash_count와 
+ * 하나의 bdaddr를 받을 수 있다.
+ * 각 모드에 대한 설명도 출력한다.
+ */
 int usage(char *name)
 {
 	fprintf(stderr, "BSS: Bluetooth Stack Smasher\n");
@@ -237,6 +274,15 @@ int usage(char *name)
 }
 
 
+/**
+ * 주어진 코드에 대응하는 L2CAP 메시지 문자열을 반환하는 함수.
+ *
+ * @param code L2CAP 메시지 코드
+ * @return 코드에 해당하는 L2CAP 메시지 문자열. 코드가 인식되지 않으면 NULL을 반환.
+ *
+ * 이 함수는 주어진 L2CAP 코드에 따라 대응하는 문자열을 할당하고 반환합니다.
+ * 반환된 문자열은 사용 후 free()를 통해 메모리를 해제해야 합니다.
+ */
 char *code2define(int code)
 {
 	char *strcode= malloc(BUFCODE + 1);
@@ -291,6 +337,30 @@ char *code2define(int code)
 	}
 	return strcode;
 }
+
+/**
+ * main 함수는 명령 줄 인수를 파싱하고 프로그램을 실행합니다.
+ *
+ * 인수:
+ * - argc: 명령 줄 인수의 개수
+ * - argv: 명령 줄 인수의 배열
+ *
+ * 동작:
+ * 1. root 권한이 아닌 경우 오류 메시지를 출력하고 종료합니다.
+ * 2. 명령 줄 인수의 개수가 적절하지 않으면 사용법을 출력합니다.
+ * 3. 명령 줄 인수를 파싱하고 각 옵션을 설정합니다:
+ *    - 블루투스 주소 (bdaddr)
+ *    - 크기 (siz)
+ *    - 모드 (mode)
+ *    - 패딩 (pad)
+ *    - 최대 충돌 횟수 (maxcrash)
+ * 4. 모드 값이 12를 초과하는 경우 사용법을 출력하고 종료합니다.
+ * 5. 모드에 따라 l2dos와 l2fuzz 함수를 호출하여 블루투스 패킷을 전송합니다.
+ * 6. 작업이 완료되면 블루투스 기기가 패킷을 수신하여 충돌하지 않았음을 알리는 메시지를 출력합니다.
+ *
+ * 반환값:
+ * - 정상 종료 시 EXIT_SUCCESS
+ */
 
 int main(int argc, char **argv)
 {

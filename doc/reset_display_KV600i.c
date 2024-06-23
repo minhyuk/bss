@@ -32,6 +32,28 @@
 #define SIZE		15
 #define FAKE_SIZE	12
 
+/**
+ * main - Bluetooth L2CAP 커넥션을 통해 데이터를 송신하는 기능을 수행하는 프로그램
+ * 
+ * @argc: 명령 줄 인자(argument) 개수
+ * @argv: 명령 줄 인자 값을 포함하는 문자열 배열
+ * 
+ * 프로그램은 명령 줄 인자로 주어진 Bluetooth 주소로 L2CAP 커넥션을 설정하고,
+ * Echo 요청 패킷을 송신하며, 송신된 패킷의 내용을 출력한다.
+ * 
+ * 작업순서:
+ * 1. 명령 줄 인자로 Bluetooth 주소를 받음
+ * 2. Bluetooth 소켓 생성
+ * 3. 소켓을 bind()로 바인딩
+ * 4. 입력 받은 Bluetooth 주소로 커넥트
+ * 5. 패킷을 위한 메모리 할당
+ * 6. Echo 요청 패킷을 작성
+ * 7. 패킷 송신 후, 송신된 패킷 출력
+ * 8. 자원 해제 및 소켓 닫기
+ *
+ * 올바른 사용법은: <프로그램 이름> <Bluetooth 주소>
+ */
+
 int main(int argc, char **argv)
 {
 	char *buffer;
