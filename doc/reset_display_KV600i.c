@@ -32,6 +32,25 @@
 #define SIZE		15
 #define FAKE_SIZE	12
 
+/**
+ * @brief Entry point of the program
+ * 
+ * This function performs the following steps:
+ * 1. Checks if the correct number of command-line arguments is provided.
+ * 2. Creates a raw Bluetooth L2CAP socket.
+ * 3. Binds the socket to the Bluetooth adapter.
+ * 4. Converts the given Bluetooth address from string to binary format.
+ * 5. Connects the socket to the specified Bluetooth address.
+ * 6. Allocates a buffer for the L2CAP packet.
+ * 7. Sets up an L2CAP echo request packet.
+ * 8. Sends the L2CAP packet.
+ * 9. Prints the contents of the sent buffer in hexadecimal format.
+ * 10. Frees the allocated buffer and closes the socket before exiting.
+ * 
+ * @param argc The number of command-line arguments
+ * @param argv The array of command-line argument strings
+ * @return int Exit status code
+ */
 int main(int argc, char **argv)
 {
 	char *buffer;

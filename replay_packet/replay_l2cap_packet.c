@@ -38,6 +38,18 @@
 #define SIZE		12
 char replay_buggy_packet[]="\xB1\x01\xDB\x69\x94\x5C\x07\x4E\x0D\x9B\x2E\xF1";
 
+/**
+ * @brief Main entry point for sending an L2CAP (Logical Link Control and Adaptation Protocol) packet via Bluetooth.
+ * 
+ * @param argc Number of command-line arguments.
+ * @param argv Array of command-line arguments; expects the Bluetooth address as the first argument.
+ * 
+ * This function sets up a raw Bluetooth socket, binds it, and connects it to the specified Bluetooth address.
+ * It then sends a predefined packet over this connection and prints the sent packet in hexadecimal format.
+ * If any operation fails, the function will print an error message and exit the program.
+ * 
+ * @return Exit status of the program; EXIT_SUCCESS on successful execution, otherwise a failure status.
+ */
 int main(int argc, char **argv)
 {
 	struct sockaddr_l2 addr;

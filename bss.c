@@ -53,6 +53,18 @@ void l2dos(char *, int, int, char);
 void l2fuzz(char *bdstr_addr, int maxsize, int maxcrash);
 char *code2define(int code);
 
+/**
+ * Function to perform L2CAP fuzz testing.
+ *
+ * This function establishes a raw L2CAP socket, binds, and connects to a specified Bluetooth device.
+ * It then constructs a packet with specified size and padding, and sends it multiple times to the target.
+ * The function also includes error handling and displays relevant information if a crash is suspected.
+ *
+ * @param bdstr_addr Address of the target Bluetooth device as a string.
+ * @param cmdnum L2CAP command number to use for fuzzing.
+ * @param siz Size of the packet to be sent.
+ * @param pad Character to use for padding the packet; if 0, the padding byte will be 0x41.
+ */
 void l2dos(char *bdstr_addr, int cmdnum, int siz, char pad)
 {
 	char *buf;
@@ -74,7 +86,7 @@ void l2dos(char *bdstr_addr, int cmdnum, int siz, char pad)
 	}
 
 	str2ba(bdstr_addr, &addr.l2_bdaddr);
-	if (connect(sock, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
+	if (connect(sock, (struct sockaddr *) & addr, sizeof(addr)) < 0) {
 		perror("connect");
 		exit(EXIT_FAILURE);
 	}
@@ -130,12 +142,29 @@ void l2dos(char *bdstr_addr, int cmdnum, int siz, char pad)
 	free(strcode);	
 }
 
+/**
+ * l2fuzz - Send random L2CAP packets to a Bluetooth device, potentially causing crashes.
+ *
+ * @bdstr_addr: Bluetooth device address to send packets to (as a string).
+ * @maxsize: Maximum size of the random packets.
+ * @maxcrash: Maximum number of crashes to allow before exiting.
+ *
+ * This function continuously sends random L2CAP packets of varying size (up to maxsize)
+ * to the specified Bluetooth device. If the device crashes (evidenced by send() failing),
+ * it prints information about the crash and the packet that caused it. The function exits
+ * after maxcrash crashes have been detected or if maxcrash is set to 0, it runs indefinitely.
+ *
+ * It requires the Bluetooth device's address to be passed as a string in bdstr_addr.
+ * The function binds a socket to the Bluetooth adapter, connects to the specified device,
+ * then enters an infinite loop where it sends random data.
+ */
 void l2fuzz(char *bdstr_addr, int maxsize, int maxcrash)
 {
 	char *buf, *savedbuf;
 	struct sockaddr_l2 addr;
 	int sock, i, size;
-	int crash_count=0, savedsize;
+	int crash_count = 0, savedsize;
+
 	if ((sock = socket(PF_BLUETOOTH, SOCK_RAW, BTPROTO_L2CAP)) < 0) {
 		perror("socket");
 		exit(EXIT_FAILURE);
@@ -154,30 +183,29 @@ void l2fuzz(char *bdstr_addr, int maxsize, int maxcrash)
 		exit(EXIT_FAILURE);
 	}
 
-	if(!(savedbuf = (char *) malloc ((int) maxsize + 1))) {
+	if (!(savedbuf = (char *) malloc ((int) maxsize + 1))) {
 		perror("malloc");
 		exit(EXIT_FAILURE);
 	}
 
-	while(1)		// Initite loop (ctrl-c to stop...)
+	while (1)
 	{
-		size=rand() % maxsize;
-		if(size == 0) 
-			size=1;
-		if(!(buf = (char *) malloc ((int) size + 1))) {
+		size = rand() % maxsize;
+		if (size == 0) 
+			size = 1;
+		if (!(buf = (char *) malloc ((int) size + 1))) {
 			perror("malloc");
 			exit(EXIT_FAILURE);
 		}
 
 		bzero(buf, size);
-		for(i=0 ; i<size ; i++)	
+		for (i = 0; i < size; i++)	
 			buf[i] = (char) rand();
 		
 		putchar('.');
 		fflush(stdout);
-		
-		if(send(sock, buf, size, 0) <= 0)
-		{
+
+		if (send(sock, buf, size, 0) <= 0) {
 			crash_count++;
 			fprintf(stdout, "\n%s BT stack may have crashed. This device seems to be vulnerable to buggy packets.\n", bdstr_addr);
 			fprintf(stdout, "Please, ensure that the device has really crashed doing a bt scan for instance.\n");
@@ -186,35 +214,39 @@ void l2fuzz(char *bdstr_addr, int maxsize, int maxcrash)
 			fprintf(stdout, "\tPacket size\t%d\n", savedsize);
 			fprintf(stdout, "\t----------------------------------------------------\n");
 			fprintf(stdout, "\tPacket dump\n\t");
-			for(i=0 ; i<savedsize ; i++)
-			{
+			for (i = 0; i < savedsize; i++) {
 				fprintf(stdout, "0x%.2X ", (unsigned char) savedbuf[i]);
-				if( (i%30) == 29)
+				if ((i % 30) == 29)
 					fprintf(stdout, "\n\t");
 			}
 			fprintf(stdout, "\n\t----------------------------------------------------\n");
 
 			fprintf(stdout, "char replay_buggy_packet[]=\"");
-			for(i=0 ; i<savedsize ; i++)
-			{
+			for (i = 0; i < savedsize; i++) {
 				fprintf(stdout, "\\x%.2X", (unsigned char) savedbuf[i]);
 			}
 			fprintf(stdout, "\";\n");
 
-			if((crash_count == maxcrash) && (maxcrash != 0) && (maxcrash >= 0))
-			{
+			if ((crash_count == maxcrash) && (maxcrash != 0) && (maxcrash >= 0)) {
 				free(buf);
 				free(savedbuf);
 				exit(EXIT_SUCCESS);
 			}
-			
 		}
-		memcpy(savedbuf, buf, size);	// Get the previous packet, not this one...
+		memcpy(savedbuf, buf, size); // Get the previous packet, not this one...
 		savedsize = size;
 		free(buf);
 	}
 }
 
+/**
+ * usage - Prints the usage information of the Bluetooth Stack Smasher (BSS) tool and exits the program.
+ * @name: The name of the executable (typically argv[0]).
+ *
+ * This function prints out the usage information, including the different modes available for 
+ * the tool, and how to use its arguments. After printing the information, the function exits 
+ * the program with a failure status.
+ */
 int usage(char *name)
 {
 	fprintf(stderr, "BSS: Bluetooth Stack Smasher\n");
@@ -237,6 +269,17 @@ int usage(char *name)
 }
 
 
+/**
+ * Converts a given L2CAP code to its corresponding string definition.
+ *
+ * This function takes an integer code representing an L2CAP message type 
+ * and returns a dynamically allocated string describing the type. 
+ * If the code is not recognized, it returns NULL.
+ *
+ * @param code The L2CAP code to be converted to a string.
+ * @return A pointer to a dynamically allocated string containing the 
+ *         description of the L2CAP code, or NULL if the code is not recognized.
+ */
 char *code2define(int code)
 {
 	char *strcode= malloc(BUFCODE + 1);
@@ -292,6 +335,18 @@ char *code2define(int code)
 	return strcode;
 }
 
+/**
+ * @brief Main function to run the Bluetooth device test tool.
+ *
+ * This function initializes variables, checks for root privileges, parses command-line arguments,
+ * and calls specific testing functions based on the parsed mode. It targets a Bluetooth device
+ * for various testing operations, potentially causing it to crash with malformed packets.
+ *
+ * @param argc Number of arguments passed to the program.
+ * @param argv Array of argument strings.
+ *
+ * @return EXIT_SUCCESS on successful execution, otherwise exits with a failure status.
+ */
 int main(int argc, char **argv)
 {
 	int i, siz = 0, mode = 0, maxcrash=1;
