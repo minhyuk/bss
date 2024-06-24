@@ -53,6 +53,29 @@ void l2dos(char *, int, int, char);
 void l2fuzz(char *bdstr_addr, int maxsize, int maxcrash);
 char *code2define(int code);
 
+/**
+ * Function: l2dos
+ * ----------------
+ * Sends L2CAP (Logical Link Control and Adaptation Protocol) commands to try to fuzz a Bluetooth device, 
+ * potentially discovering vulnerabilities by sending malformed or unexpected packets.
+ *
+ * bdstr_addr: Bluetooth device address string.
+ * cmdnum: The L2CAP command number to use for fuzzing.
+ * siz: The size of the buffer for sending packets.
+ * pad: Padding byte or character to fill the packet buffer.
+ * 
+ * This function performs the following steps:
+ *  - Creates a raw Bluetooth socket.
+ *  - Binds the socket to the Bluetooth protocol family.
+ *  - Converts the Bluetooth device address string to a Bluetooth address and connects the socket.
+ *  - Allocates a buffer for preparing the L2CAP command.
+ *  - Fills the buffer with the provided padding or a default byte.
+ *  - Outputs the size of the packet.
+ *  - Retrieves the string representation of the L2CAP command.
+ *  - In a loop, sends the command several times, outputting a dot for each try.
+ *  - If the send fails, it prints detailed information about the failure and potential vulnerability.
+ *  - Frees the allocated string code.
+ */
 void l2dos(char *bdstr_addr, int cmdnum, int siz, char pad)
 {
 	char *buf;
@@ -130,6 +153,21 @@ void l2dos(char *bdstr_addr, int cmdnum, int siz, char pad)
 	free(strcode);	
 }
 
+/**
+ * l2fuzz - Fuzzes a Bluetooth device with random L2CAP packets to test its robustness.
+ *
+ * @bdstr_addr: The Bluetooth address of the target device as a string.
+ * @maxsize: The maximum size for the randomly generated packet.
+ * @maxcrash: The maximum number of crashes to detect before stopping the fuzzing process.
+ *
+ * This function:
+ * 1. Creates a raw Bluetooth socket.
+ * 2. Binds the socket to the local Bluetooth interface.
+ * 3. Connects to the target Bluetooth device using its address.
+ * 4. Enters an infinite loop to send random packets to the device.
+ * 5. If the target device appears to crash due to the packet, it outputs the packet data and details.
+ * 6. Stops if the crash count reaches maxcrash.
+ */
 void l2fuzz(char *bdstr_addr, int maxsize, int maxcrash)
 {
 	char *buf, *savedbuf;
@@ -215,6 +253,15 @@ void l2fuzz(char *bdstr_addr, int maxsize, int maxcrash)
 	}
 }
 
+/**
+ * Displays the usage information for the Bluetooth Stack Smasher (BSS) tool.
+ *
+ * @param name The name of the executable.
+ *
+ * This function prints the usage information and available modes for the BSS tool to the standard error stream.
+ * It includes the command format, options, and descriptions of various modes.
+ * After displaying the usage information, the function terminates the program with an exit status indicating failure.
+ */
 int usage(char *name)
 {
 	fprintf(stderr, "BSS: Bluetooth Stack Smasher\n");
@@ -237,6 +284,21 @@ int usage(char *name)
 }
 
 
+/**
+ * Function: code2define
+ * ---------------------
+ * Converts an L2CAP command code to its corresponding string representation.
+ *
+ * @param code: An integer representing the L2CAP command code.
+ *              The possible values are defined by constants like L2CAP_ECHO_REQ,
+ *              L2CAP_COMMAND_REJ, etc.
+ *
+ * @return: A dynamically allocated string containing the textual representation 
+ *          of the given L2CAP command code. If the provided code does not match
+ *          any known L2CAP command, the function returns NULL.
+ *
+ * Note: The caller is responsible for freeing the allocated memory.
+ */
 char *code2define(int code)
 {
 	char *strcode= malloc(BUFCODE + 1);
@@ -292,6 +354,17 @@ char *code2define(int code)
 	return strcode;
 }
 
+/**
+ * Main function for the Bluetooth attack tool.
+ * 
+ * @param argc the number of command-line arguments
+ * @param argv array of command-line argument strings
+ * 
+ * This function initializes variables, ensures the program
+ * is run with root privileges, parses command-line arguments,
+ * and calls appropriate functions to perform Bluetooth denial-of-service
+ * or fuzzing attacks based on the provided mode.
+ */
 int main(int argc, char **argv)
 {
 	int i, siz = 0, mode = 0, maxcrash=1;
