@@ -32,6 +32,27 @@
 #define SIZE		15
 #define FAKE_SIZE	12
 
+/* 
+ * Main function to establish an L2CAP connection to a Bluetooth device 
+ * and send an L2CAP Echo Request packet.
+ * 
+ * Arguments:
+ * - argc: Count of command-line arguments.
+ * - argv: Array of command-line arguments, where the first argument should be the Bluetooth address.
+ * 
+ * Steps:
+ * 1. Checks if the Bluetooth address is provided.
+ * 2. Creates a raw L2CAP socket.
+ * 3. Binds the socket to the local Bluetooth adapter.
+ * 4. Converts the provided Bluetooth address and attempts to connect to it.
+ * 5. Allocates memory for the L2CAP packet and prepares the Echo Request packet.
+ * 6. Sends the packet and displays the sent packet in hexadecimal format.
+ * 7. Frees allocated memory and closes the socket.
+ * 
+ * Returns:
+ * - EXIT_SUCCESS (0) on successful execution.
+ * - Exits with an error message and EXIT_FAILURE otherwise.
+ */
 int main(int argc, char **argv)
 {
 	char *buffer;

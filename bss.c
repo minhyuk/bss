@@ -53,6 +53,19 @@ void l2dos(char *, int, int, char);
 void l2fuzz(char *bdstr_addr, int maxsize, int maxcrash);
 char *code2define(int code);
 
+/**
+ * Function to perform L2CAP (Logical Link Control and Adaptation Protocol) DOS attack
+ * by sending crafted command packets to a specified Bluetooth device address.
+ *
+ * @param bdstr_addr  Bluetooth device address as a string
+ * @param cmdnum      L2CAP command number to be sent
+ * @param siz         Size of the payload to be sent
+ * @param pad         Padding byte to be used in payload; if set to 0, defaults to 0x41 ('A')
+ *
+ * The function establishes a raw L2CAP socket, binds and connects to the specified 
+ * Bluetooth device, crafts L2CAP command packets, and sends them repeatedly attempting 
+ * to crash the Bluetooth stack of the device.
+ */
 void l2dos(char *bdstr_addr, int cmdnum, int siz, char pad)
 {
 	char *buf;
@@ -130,6 +143,18 @@ void l2dos(char *bdstr_addr, int cmdnum, int siz, char pad)
 	free(strcode);	
 }
 
+/**
+ * l2fuzz - Perform fuzz testing on the L2CAP layer of a Bluetooth device.
+ * @bdstr_addr: Bluetooth device address to connect to.
+ * @maxsize: Maximum size of the packet to send.
+ * @maxcrash: Maximum number of crashes to tolerate before stopping.
+ *
+ * This function connects to a Bluetooth device's L2CAP layer and sends randomly
+ * generated packets to it continuously in an attempt to discover vulnerabilities.
+ * If it detects that the device has potentially crashed, it logs the incident
+ * with the offending packet details. The function will terminate after reaching
+ * the specified crash count or can be manually terminated.
+ */
 void l2fuzz(char *bdstr_addr, int maxsize, int maxcrash)
 {
 	char *buf, *savedbuf;
@@ -215,6 +240,17 @@ void l2fuzz(char *bdstr_addr, int maxsize, int maxcrash)
 	}
 }
 
+/**
+ * @brief Prints the usage message for the Bluetooth Stack Smasher (BSS) utility.
+ *
+ * This function displays the usage instructions and information for different modes 
+ * supported by the BSS utility. After displaying the usage information, the function 
+ * terminates the program with an exit status indicating failure.
+ *
+ * @param name The name of the program (typically argv[0] from main).
+ *
+ * @return This function does not return; it calls exit to terminate the program.
+ */
 int usage(char *name)
 {
 	fprintf(stderr, "BSS: Bluetooth Stack Smasher\n");
@@ -237,6 +273,21 @@ int usage(char *name)
 }
 
 
+/**
+ * Converts an L2CAP command code to its corresponding string representation.
+ * 
+ * Allocates memory to hold the string representation of the L2CAP command and 
+ * fills it based on the provided command code. If the provided code matches one 
+ * of the known L2CAP commands, the string representation of that command is stored 
+ * in the allocated memory and returned. If the code does not match any known 
+ * command, NULL is returned.
+ *
+ * @param code An integer representing the L2CAP command code.
+ * 
+ * @return A pointer to a string containing the representation of the L2CAP command 
+ *         if the code is recognized, otherwise NULL. The caller is responsible for 
+ *         freeing the allocated memory.
+ */
 char *code2define(int code)
 {
 	char *strcode= malloc(BUFCODE + 1);
@@ -292,6 +343,19 @@ char *code2define(int code)
 	return strcode;
 }
 
+/**
+ * Main function for executing the Bluetooth Dos attack program.
+ *
+ * This function performs the following steps:
+ * 1. Checks if the user has root privileges.
+ * 2. Parses command-line arguments to configure options such as size, mode, padding, and maxcrash.
+ * 3. Determines the operating mode for the Bluetooth Dos attack (standard or fuzzing).
+ * 4. Executes the attack based on the specified mode.
+ *
+ * @param argc Number of command-line arguments.
+ * @param argv Array of command-line argument strings.
+ * @return Returns EXIT_SUCCESS upon successful execution.
+ */
 int main(int argc, char **argv)
 {
 	int i, siz = 0, mode = 0, maxcrash=1;

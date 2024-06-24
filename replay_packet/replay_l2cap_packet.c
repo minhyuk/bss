@@ -38,6 +38,13 @@
 #define SIZE		12
 char replay_buggy_packet[]="\xB1\x01\xDB\x69\x94\x5C\x07\x4E\x0D\x9B\x2E\xF1";
 
+/**
+ * @brief Main function to create a Bluetooth L2CAP socket, bind it, connect to a remote Bluetooth device, and send a packet.
+ * 
+ * @param argc Argument count
+ * @param argv Argument vector containing the Bluetooth address.
+ * @return int Returns EXIT_SUCCESS on successful execution, or terminates the program on failure.
+ */
 int main(int argc, char **argv)
 {
 	struct sockaddr_l2 addr;
