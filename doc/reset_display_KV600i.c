@@ -55,64 +55,64 @@
  */
 int main(int argc, char **argv)
 {
-	char *buffer;
-	l2cap_cmd_hdr *cmd;	
-	struct sockaddr_l2 addr;
-	int sock, sent, i;
+    char *packetBuffer;
+    l2cap_cmd_hdr *cmdHeader;	
+    struct sockaddr_l2 localAddress;
+    int socketDescriptor, bytesSent, index;
 
-	if(argc < 2)
-	{
-		fprintf(stderr, "%s <btaddr>\n", argv[0]);
-		exit(EXIT_FAILURE);
-	}
+    if(argc < 2)
+    {
+        fprintf(stderr, "%s <btaddr>\n", argv[0]);
+        exit(EXIT_FAILURE);
+    }
 	
-	if ((sock = socket(PF_BLUETOOTH, SOCK_RAW, BTPROTO_L2CAP)) < 0) 
-	{
-		perror("socket");
-		exit(EXIT_FAILURE);
-	}
+    if ((socketDescriptor = socket(PF_BLUETOOTH, SOCK_RAW, BTPROTO_L2CAP)) < 0) 
+    {
+        perror("socket");
+        exit(EXIT_FAILURE);
+    }
 
-	memset(&addr, 0, sizeof(addr));
-	addr.l2_family = AF_BLUETOOTH;
+    memset(&localAddress, 0, sizeof(localAddress));
+    localAddress.l2_family = AF_BLUETOOTH;
 
-	if (bind(sock, (struct sockaddr *) &addr, sizeof(addr)) < 0) 
-	{
-		perror("bind");
-		exit(EXIT_FAILURE);
-	}
+    if (bind(socketDescriptor, (struct sockaddr *) &localAddress, sizeof(localAddress)) < 0) 
+    {
+        perror("bind");
+        exit(EXIT_FAILURE);
+    }
 
-	str2ba(argv[1], &addr.l2_bdaddr);
+    str2ba(argv[1], &localAddress.l2_bdaddr);
 	
-	if (connect(sock, (struct sockaddr *) &addr, sizeof(addr)) < 0) 
-	{
-		perror("connect");
-		exit(EXIT_FAILURE);
-	}
+    if (connect(socketDescriptor, (struct sockaddr *) &localAddress, sizeof(localAddress)) < 0) 
+    {
+        perror("connect");
+        exit(EXIT_FAILURE);
+    }
 	
-	if(!(buffer = (char *) malloc ((int) SIZE + 1))) 
-	{
-		perror("malloc");
-		exit(EXIT_FAILURE);
-	}
+    if(!(packetBuffer = (char *) malloc ((int) SIZE + 1))) 
+    {
+        perror("malloc");
+        exit(EXIT_FAILURE);
+    }
 	
-	memset(buffer, 'A', SIZE);
+    memset(packetBuffer, 'A', SIZE);
 
-	cmd = (l2cap_cmd_hdr *) buffer;
-	cmd->code = L2CAP_ECHO_REQ;
-	cmd->ident = 1;
-	cmd->len = FAKE_SIZE;
+    cmdHeader = (l2cap_cmd_hdr *) packetBuffer;
+    cmdHeader->code = L2CAP_ECHO_REQ;
+    cmdHeader->ident = 1;
+    cmdHeader->len = FAKE_SIZE;
 	
-	if( (sent=send(sock, buffer, SIZE, 0)) >= 0)
-	{
-		printf("L2CAP packet sent (%d)\n", sent);
-	}
+    if( (bytesSent = send(socketDescriptor, packetBuffer, SIZE, 0)) >= 0)
+    {
+        printf("L2CAP packet sent (%d)\n", bytesSent);
+    }
 
-	printf("Buffer:\t");
-	for(i=0; i<sent; i++)
-		printf("%.2X ", (unsigned char) buffer[i]);
-	printf("\n");
+    printf("Buffer:\t");
+    for(index = 0; index < bytesSent; index++)
+        printf("%.2X ", (unsigned char) packetBuffer[index]);
+    printf("\n");
 
-	free(buffer);
-	close(sock);
-	return EXIT_SUCCESS;
+    free(packetBuffer);
+    close(socketDescriptor);
+    return EXIT_SUCCESS;
 }
