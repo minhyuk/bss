@@ -32,66 +32,85 @@
 #define SIZE		15
 #define FAKE_SIZE	12
 
+/**
+ * @brief Entry point of the program
+ * 
+ * This function performs the following steps:
+ * 1. Checks if the correct number of command-line arguments is provided.
+ * 2. Creates a raw Bluetooth L2CAP socket.
+ * 3. Binds the socket to the Bluetooth adapter.
+ * 4. Converts the given Bluetooth address from string to binary format.
+ * 5. Connects the socket to the specified Bluetooth address.
+ * 6. Allocates a buffer for the L2CAP packet.
+ * 7. Sets up an L2CAP echo request packet.
+ * 8. Sends the L2CAP packet.
+ * 9. Prints the contents of the sent buffer in hexadecimal format.
+ * 10. Frees the allocated buffer and closes the socket before exiting.
+ * 
+ * @param argc The number of command-line arguments
+ * @param argv The array of command-line argument strings
+ * @return int Exit status code
+ */
 int main(int argc, char **argv)
 {
-	char *buffer;
-	l2cap_cmd_hdr *cmd;	
-	struct sockaddr_l2 addr;
-	int sock, sent, i;
+    char *pktBuffer;
+    l2cap_cmd_hdr *cmdHdr;    
+    struct sockaddr_l2 btAddr;
+    int sockFd, bytesSent, index;
 
-	if(argc < 2)
-	{
-		fprintf(stderr, "%s <btaddr>\n", argv[0]);
-		exit(EXIT_FAILURE);
-	}
-	
-	if ((sock = socket(PF_BLUETOOTH, SOCK_RAW, BTPROTO_L2CAP)) < 0) 
-	{
-		perror("socket");
-		exit(EXIT_FAILURE);
-	}
+    if(argc < 2)
+    {
+        fprintf(stderr, "%s <btaddr>\n", argv[0]);
+        exit(EXIT_FAILURE);
+    }
 
-	memset(&addr, 0, sizeof(addr));
-	addr.l2_family = AF_BLUETOOTH;
+    if ((sockFd = socket(PF_BLUETOOTH, SOCK_RAW, BTPROTO_L2CAP)) < 0) 
+    {
+        perror("socket");
+        exit(EXIT_FAILURE);
+    }
 
-	if (bind(sock, (struct sockaddr *) &addr, sizeof(addr)) < 0) 
-	{
-		perror("bind");
-		exit(EXIT_FAILURE);
-	}
+    memset(&btAddr, 0, sizeof(btAddr));
+    btAddr.l2_family = AF_BLUETOOTH;
 
-	str2ba(argv[1], &addr.l2_bdaddr);
-	
-	if (connect(sock, (struct sockaddr *) &addr, sizeof(addr)) < 0) 
-	{
-		perror("connect");
-		exit(EXIT_FAILURE);
-	}
-	
-	if(!(buffer = (char *) malloc ((int) SIZE + 1))) 
-	{
-		perror("malloc");
-		exit(EXIT_FAILURE);
-	}
-	
-	memset(buffer, 'A', SIZE);
+    if (bind(sockFd, (struct sockaddr *) &btAddr, sizeof(btAddr)) < 0) 
+    {
+        perror("bind");
+        exit(EXIT_FAILURE);
+    }
 
-	cmd = (l2cap_cmd_hdr *) buffer;
-	cmd->code = L2CAP_ECHO_REQ;
-	cmd->ident = 1;
-	cmd->len = FAKE_SIZE;
-	
-	if( (sent=send(sock, buffer, SIZE, 0)) >= 0)
-	{
-		printf("L2CAP packet sent (%d)\n", sent);
-	}
+    str2ba(argv[1], &btAddr.l2_bdaddr);
 
-	printf("Buffer:\t");
-	for(i=0; i<sent; i++)
-		printf("%.2X ", (unsigned char) buffer[i]);
-	printf("\n");
+    if (connect(sockFd, (struct sockaddr *) &btAddr, sizeof(btAddr)) < 0) 
+    {
+        perror("connect");
+        exit(EXIT_FAILURE);
+    }
 
-	free(buffer);
-	close(sock);
-	return EXIT_SUCCESS;
+    if(!(pktBuffer = (char *) malloc ((int) SIZE + 1))) 
+    {
+        perror("malloc");
+        exit(EXIT_FAILURE);
+    }
+
+    memset(pktBuffer, 'A', SIZE);
+
+    cmdHdr = (l2cap_cmd_hdr *) pktBuffer;
+    cmdHdr->code = L2CAP_ECHO_REQ;
+    cmdHdr->ident = 1;
+    cmdHdr->len = FAKE_SIZE;
+
+    if( (bytesSent = send(sockFd, pktBuffer, SIZE, 0)) >= 0)
+    {
+        printf("L2CAP packet sent (%d)\n", bytesSent);
+    }
+
+    printf("Buffer:\t");
+    for(index = 0; index < bytesSent; index++)
+        printf("%.2X ", (unsigned char) pktBuffer[index]);
+    printf("\n");
+
+    free(pktBuffer);
+    close(sockFd);
+    return EXIT_SUCCESS;
 }
