@@ -53,6 +53,24 @@ void l2dos(char *, int, int, char);
 void l2fuzz(char *bdstr_addr, int maxsize, int maxcrash);
 char *code2define(int code);
 
+/**
+ * @brief Sends L2CAP packets for fuzz testing a Bluetooth device.
+ * 
+ * @param bdstr_addr Bluetooth address string of the target device.
+ * @param cmdnum L2CAP command number to send.
+ * @param siz Size of the packet to send.
+ * @param pad Padding byte to fill the packet with.
+ * 
+ * This function performs the following steps:
+ * 1. Creates a raw Bluetooth socket.
+ * 2. Binds the socket.
+ * 3. Connects the socket to the target Bluetooth device using the specified Bluetooth address.
+ * 4. Allocates a buffer for the L2CAP packet.
+ * 5. Fills the packet buffer with the specified padding byte.
+ * 6. Maps the L2CAP command number to a string description for logging.
+ * 7. Sends the L2CAP packet multiple times for fuzzing the target device.
+ * 8. Prints information if the target device appears to be vulnerable.
+ */
 void l2dos(char *bdstr_addr, int cmdnum, int siz, char pad)
 {
 	char *buf;
@@ -130,6 +148,21 @@ void l2dos(char *bdstr_addr, int cmdnum, int siz, char pad)
 	free(strcode);	
 }
 
+/**
+ * l2fuzz - fuzzing Bluetooth L2CAP connection with random data to test vulnerability
+ * @bdstr_addr: Bluetooth device address in string format
+ * @maxsize: Maximum size of the buffer to send
+ * @maxcrash: Maximum number of crashes before exiting
+ *
+ * This function creates a raw socket for L2CAP and binds it to the local Bluetooth 
+ * adapter. It then connects to a remote Bluetooth device specified by bdstr_addr, 
+ * and continuously sends random data of varying lengths (up to maxsize) to this 
+ * device. If the remote Bluetooth stack crashes, it records the occurrence along 
+ * with the data that caused the crash, and if it reaches maxcrash occurrences, 
+ * the function exits. The function is run indefinitely until explicitly stopped.
+ * 
+ * Return: void
+ */
 void l2fuzz(char *bdstr_addr, int maxsize, int maxcrash)
 {
 	char *buf, *savedbuf;
@@ -215,6 +248,20 @@ void l2fuzz(char *bdstr_addr, int maxsize, int maxcrash)
 	}
 }
 
+/**
+ * Display usage information and exit the program.
+ *
+ * This function prints a detailed help message to the standard error
+ * stream describing the usage of the Bluetooth Stack Smasher (BSS) program.
+ * It lists the expected command-line arguments and the different operational
+ * modes supported by the program. After printing the usage information, it
+ * terminates the program with a failure status.
+ *
+ * @param name The name of the program, typically argv[0].
+ *
+ * @return This function does not return as it exits the program.
+ */
+
 int usage(char *name)
 {
 	fprintf(stderr, "BSS: Bluetooth Stack Smasher\n");
@@ -237,10 +284,24 @@ int usage(char *name)
 }
 
 
+/**
+ * code2define - Convert L2CAP command codes to human-readable strings
+ * 
+ * @code: The integer value representing an L2CAP command code.
+ * 
+ * This function takes an integer code corresponding to an L2CAP command 
+ * and returns a string with the human-readable description of the 
+ * L2CAP command. The returned string is dynamically allocated and 
+ * should be freed by the caller. If the code does not match any 
+ * predefined L2CAP command, the function returns NULL.
+ * 
+ * Return: A dynamically allocated string with the L2CAP command description 
+ * or NULL if the code does not match any known command.
+ */
 char *code2define(int code)
 {
-	char *strcode= malloc(BUFCODE + 1);
-	switch(code)
+	char *strcode = malloc(BUFCODE + 1);
+	switch (code)
 	{
 		case L2CAP_ECHO_REQ:
 			strcpy(strcode, "L2CAP echo request");	
@@ -249,49 +310,60 @@ char *code2define(int code)
 		case L2CAP_COMMAND_REJ:
 			strcpy(strcode, "L2CAP command reject");	
 			break;
-			
+
 		case L2CAP_CONN_REQ:
 			strcpy(strcode, "L2CAP connection request");	
 			break;
-			
+
 		case L2CAP_CONN_RSP:
 			strcpy(strcode, "L2CAP connexion response");	
 			break;
-			
+
 		case L2CAP_CONF_REQ:
 			strcpy(strcode, "L2CAP configuration request");	
 			break;
-			
+
 		case L2CAP_CONF_RSP:
 			strcpy(strcode, "L2CAP configuration response");	
 			break;
-			
+
 		case L2CAP_DISCONN_REQ:
 			strcpy(strcode, "L2CAP disconnection request");	
 			break;
-			
+
 		case L2CAP_DISCONN_RSP:
 			strcpy(strcode, "L2CAP disconnection response");	
 			break;
-			
+
 		case L2CAP_ECHO_RSP:
 			strcpy(strcode, "L2CAP echo response");	
 			break;
-			
+
 		case L2CAP_INFO_REQ:
 			strcpy(strcode, "L2CAP info request");	
 			break;
-			
+
 		case L2CAP_INFO_RSP:
 			strcpy(strcode, "L2CAP info response");	
 			break;
-			
+
 		default:
-			strcode=NULL;
+			strcode = NULL;
 	}
 	return strcode;
 }
 
+/**
+ * @brief The main function of the program.
+ *
+ * This function initializes several variables and checks if the user has root permissions.
+ * It processes command-line arguments to set various parameters such as Bluetooth address, size, mode, and others.
+ * Depending on the mode, it calls other functions (l2dos, l2fuzz) to execute specific behaviors.
+ *
+ * @param argc The number of command-line arguments.
+ * @param argv The array of command-line arguments.
+ * @return An integer representing the exit status of the program.
+ */
 int main(int argc, char **argv)
 {
 	int i, siz = 0, mode = 0, maxcrash=1;

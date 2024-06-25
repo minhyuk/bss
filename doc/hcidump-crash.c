@@ -20,6 +20,15 @@
 #define SIZE		15
 #define FAKE_SIZE	12
 
+/**
+ * @brief Main function to create, bind, and connect a Bluetooth L2CAP socket, 
+ *        send an L2CAP echo request with a specified Bluetooth address, and print the sent packet.
+ * 
+ * @param argc Number of command-line arguments
+ * @param argv Vector of command-line arguments
+ * 
+ * @return EXIT_SUCCESS on success, exits with an error code otherwise.
+ */
 int main(int argc, char **argv)
 {
 	char *buffer;

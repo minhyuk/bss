@@ -32,6 +32,19 @@
 #define SIZE		15
 #define FAKE_SIZE	12
 
+/**
+ * main - Entry point for the Bluetooth L2CAP packet sender program.
+ * @argc: Argument count.
+ * @argv: Argument vector.
+ * 
+ * This function initializes a raw L2CAP socket and binds it to a local
+ * Bluetooth address. It then connects to a remote Bluetooth address
+ * provided as an argument, constructs an Echo Request L2CAP packet, 
+ * sends it, and prints the sent packet data in hexadecimal format.
+ * 
+ * Return: EXIT_SUCCESS on successful execution, exits with failure 
+ * message and EXIT_FAILURE on any error.
+ */
 int main(int argc, char **argv)
 {
 	char *buffer;
